@@ -3,18 +3,19 @@
 
 source initramfs-tools/initramfs.conf
 
-if [ ! -d ${DISTRO} ] ; then
+if [ ! -d root ] ; then
 	# if the dir exists, we assume that part is already done
 	# Otherwise:
-	mkdir $DISTRO
-	debootstrap --arch=amd64 ${DISTRO} ${DISTRO}
+	mkdir root
+	sudo debootstrap --arch=amd64 ${DISTRO} root
 	# add packages
-	cp pkglist adaptdistro ${DISTRO}
-	chroot ${DISTRO} bash adaptdistro
+	sudo cp pkglist adaptdistro root
+	sudo chroot root chmod +x adaptdistro
+	sudo chroot root /adaptdistro
 fi
 
 # build initramfs with running kernel modules
 	
-mkinitramfs -d initramfs-tools/ -o ramfs -v
+sudo mkinitramfs -d initramfs-tools/ -o ramfs -v
 
 

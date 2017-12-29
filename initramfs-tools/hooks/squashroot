@@ -21,7 +21,7 @@ manual_add_modules squashfs
 manual_add_modules aesni_intel || true
 
 # make squashfs from root
-mksquashfs /home/gig/911builder/${DISTRO} ${DESTDIR}/root.sqfs -progress -comp lz4
+mksquashfs /home/gig/911builder/root ${DESTDIR}/root.sqfs -progress -comp lz4
 
 
 
