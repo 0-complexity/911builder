@@ -1,0 +1,20 @@
+#!/bin/bash
+# create workdir
+
+source initramfs-tools/initramfs.conf
+
+if [ ! -d ${DISTRO} ] ; then
+	# if the dir exists, we assume that part is already done
+	# Otherwise:
+	mkdir $DISTRO
+	debootstrap --arch=amd64 ${DISTRO} ${DISTRO}
+	# add packages
+	cp pkglist adaptdistro ${DISTRO}
+	chroot ${DISTRO} bash adaptdistro
+fi
+
+# build initramfs with running kernel modules
+	
+mkinitramfs -d initramfs-tools/ -o ramfs -v
+
+

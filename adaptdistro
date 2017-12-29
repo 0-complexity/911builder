@@ -1,0 +1,23 @@
+#!/bin/bash
+
+sed -i 's/main/main universe/' /etc/apt/sources.list
+
+apt update
+
+export DEBIAN_FRONTEND=noninteractive
+
+while read line ; do 
+  apt -q -y install $line
+done <<< $(cat pkglist)
+
+sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+
+echo "nameserver 8.8.8.8" >> /etc/resolvconf/resolv.conf.d/head
+
+apt-get clean
+
+useradd -Gsudo -m -s /bin/bash -c "GreenITGlobe User" gig
+
+echo "root:rooter" | chpasswd
+echo "gig:rooter" | chpasswd
+

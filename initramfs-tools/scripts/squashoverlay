@@ -1,0 +1,43 @@
+# FIXME This needs error checking
+
+retry_nr=0
+
+mountroot()
+{
+	eval `cat /proc/cmdline`
+	[ "x${rootfile}" = "x" ] && rootfile="root.sqfs"	
+	[ "$quiet" != "y" ] && log_end_msg
+	[ "$quiet" != "y" ] && log_begin_msg "Connecting to network..."
+	. /scripts/functions
+	configure_networking
+	# got an IP here or else it crashes
+	. /run/net-*.conf
+	[ "$quiet" != "y" ] && log_end_msg
+	[ "$quiet" != "y" ] && log_begin_msg "mounting overlay loop..."
+	# define overlay
+	modprobe overlay
+	mkdir /ro /rw 
+	mount -t tmpfs tmpfs /rw
+	mkdir /rw/upper /rw/work 
+	mount -o loop -t squashfs $rootfile /ro
+	mount -t overlay overlay -olowerdir=/ro,upperdir=/rw/upper,workdir=/rw/work ${rootmnt}
+	[ "$quiet" != "y" ] && log_end_msg
+	[ "$quiet" != "y" ] && log_begin_msg "freeing old image..."
+	rm ${rootmnt}/etc/mtab
+	ln -s /proc/self/mounts ${rootmnt}/etc/mtab
+	if [ "x${fullroot}" != "x" ] ; then
+	    wget ${fullroot}/Install -O ${rootmnt}/root/tools/Install
+	    mkdir -p ${rootmnt}/root/.ssh/
+	    wget ${fullroot}/pubkey -O - >> ${rootmnt}/root/.ssh/authorized_keys
+	else
+	    :
+ 	fi
+	chmod 755 ${rootmnt}/root/tools/Install
+	[ "$quiet" != "y" ] && log_end_msg
+	# copy modules
+	[ "$quiet" != "y" ] && log_begin_msg "sending modules to new_root"
+	cp -ra /lib/modules/`uname -r` ${rootmnt}/lib/modules
+	[ "$quiet" != "y" ] && log_end_msg
+	wait_for_udev 20
+}
+
