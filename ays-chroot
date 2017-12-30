@@ -1,0 +1,16 @@
+#!/bin/bash
+dest=$1
+shift
+
+mount -t proc none ${dest}/proc
+mount -o bind /dev/ ${dest}/dev
+mount -t devpts none ${dest}/dev/pts
+mount -t sysfs none ${dest}/sys
+
+chroot ${dest} "$@"
+
+umount  ${dest}/sys
+umount  ${dest}/dev/pts
+umount  ${dest}/dev
+umount  ${dest}/proc
+

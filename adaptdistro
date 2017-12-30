@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Install standard packages
 sed -i 's/main/main universe/' /etc/apt/sources.list
 
 apt update
@@ -10,9 +11,23 @@ while read line ; do
   apt -q -y install $line
 done <<< $(cat pkglist)
 
+# 911 booted devices are accessible as root over ssh
 sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
 
+# configure networking
+# no Ufuktu stuff
+cat << EOF > /etc/systemd/network/en.network
+[Match]
+Name=en*
+[Network]
+DHCP=yes
+EOF
+systemctl enable systemd-networkd
+
+# get resolving working
 echo "nameserver 8.8.8.8" >> /etc/resolvconf/resolv.conf.d/head
+systemctl enable systemd-resolved
+
 
 apt-get clean
 
@@ -21,3 +36,6 @@ useradd -Gsudo -m -s /bin/bash -c "GreenITGlobe User" gig
 echo "root:rooter" | chpasswd
 echo "gig:rooter" | chpasswd
 
+mkdir /root/tools > /dev/null 2>&1
+mv /ays-chroot /root/tools
+chmod 755 /root/tools/ays-chroot

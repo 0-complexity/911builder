@@ -15,8 +15,10 @@ openssh-client
 openssh-server
 os-prober
 parted
-vim-runtime
+vim-nox
 wget
 iperf
 iperf3
-
+resolvconf
+bash-completion
+ipcalc

@@ -9,3 +9,18 @@
 #
 # raid1
 # sd_mod
+squashfs 
+overlay 
+ipmi_devintf 
+ipmi_ssif 
+ipmi_si 
+ipmi_msghandler 
+linear
+multipath
+raid0
+raid1
+raid456
+raid5
+raid6
+raid10
+

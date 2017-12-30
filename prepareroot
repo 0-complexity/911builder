@@ -9,7 +9,7 @@ if [ ! -d root ] ; then
 	mkdir root
 	sudo debootstrap --arch=amd64 ${DISTRO} root
 	# add packages
-	sudo cp pkglist adaptdistro root
+	sudo cp ays-chroot pkglist adaptdistro root
 	sudo chroot root chmod +x adaptdistro
 	sudo chroot root /adaptdistro
 fi

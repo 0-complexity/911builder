@@ -12,6 +12,8 @@ esac
 copy_exec /bin/mount /bin
 copy_exec /usr/bin/sha512sum /bin
 copy_exec /bin/bash /bin
+copy_exec /usr/bin/ipmitool /bin
+copy_exec /usr/bin/wget /bin
 
 manual_add_modules overlay
 manual_add_modules dm_mod

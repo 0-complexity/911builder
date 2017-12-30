@@ -1,0 +1,4 @@
+# not ramfs
+ramfs
+# not the root tree
+root/**
