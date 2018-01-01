@@ -17,8 +17,7 @@
   1. delete the `./root` dir if you start from scratch
   1. Basically : just run `./prepareroot`
 
-That'll create a `ramfs` file. Together with the __running__ kernel of your host,
-you can boot it as 
+That'll create a `ramfs` file. 
 
 ### Showtime!
 
@@ -47,6 +46,11 @@ rm -rf ./root
 
 ```
 
+That'll create a `ramfs` file. Together with the __running__ kernel of your host,
+you can boot it as 
+
+
+  - snippet of vm's xml for booting it
 ```
   <os>
     <type arch='x86_64' machine='pc-i440fx-2.11'>hvm</type>
