@@ -1,5 +1,6 @@
 #!/bin/bash
 # create workdir
+KVER=4.13.0-19-generic
 
 source initramfs-tools/initramfs.conf
 
@@ -15,7 +16,10 @@ if [ ! -d root ] ; then
 fi
 
 # build initramfs with running kernel modules
+[ ! -d ./bin ] && mkdir bin
 	
-sudo mkinitramfs -d initramfs-tools/ -o ramfs -v
+sudo mkinitramfs -d initramfs-tools/ -o bin/ramfs ${KVER}
+sudo cp /boot/vmlinuz-${KVER} bin/vmlinuz
+sudo chown $(whoami):$(whoami) bin/*
 
 

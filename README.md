@@ -43,6 +43,8 @@ rm -rf ./root
 # other necessary packages from "pkglist" get installed
 # when finished , you'll find a file "ramfs" -> that is the initrd
 
+ls bin
+
 
 ```
 
@@ -54,7 +56,7 @@ you can boot it as
 ```
   <os>
     <type arch='x86_64' machine='pc-i440fx-2.11'>hvm</type>
-    <kernel>/boot/vmlinuz-4.13.0-19-generic</kernel>
+    <kernel>/boot/vmlinuz</kernel>
     <initrd>/boot/ramfs</initrd>
     <boot dev='hd'/>
   </os>
