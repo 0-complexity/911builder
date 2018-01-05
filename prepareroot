@@ -1,8 +1,10 @@
 #!/bin/bash
 # create workdir
 KVER=4.13.0-19-generic
-SUDO=""
-[ $(awk -F/ '$2 == "docker"' /proc/self/cgroup) -ne 0 ] && SUDO="sudo "
+
+# when running in a docker, we're root (no sudo)
+SUDO="sudo "
+[ $(awk -F/ '$2 == "docker"' /proc/self/cgroup | wc -l) -ne 0 ] && SUDO=""
 
 source initramfs-tools/initramfs.conf
 
@@ -18,10 +20,9 @@ if [ ! -d root ] ; then
 fi
 
 # build initramfs with running kernel modules
-[ ! -d ./bin ] && mkdir bin
 	
 ${SUDO} mkinitramfs -d initramfs-tools/ -o bin/ramfs ${KVER}
-${SUDO} cp /boot/vmlinuz-${KVER} bin/vmlinuz
-${SUDO} chown $(whoami):$(whoami) bin/*
+${SUDO} cp /boot/vmlinuz-${KVER} /binaries/vmlinuz
+${SUDO} chown $(whoami):$(whoami) /binaries/*
 
 

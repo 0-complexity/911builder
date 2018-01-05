@@ -67,3 +67,25 @@ in qemu
 or configure pxe to use these files for `linux` and `initrd`
 
 or whatevvah
+
+## NOW: 
+
+### Build it with Docker
+
+I assume you (by now) know how to install/use docker, so that will not be handeled here.
+
+Simple:
+
+```
+cd $(pwd)/docker
+
+# create your work image
+docker build -t 911builder:latest .
+
+# and run the builder
+
+docker run -v $(pwd)/binaries:/binaries 911builder:latest
+
+```
+
+then, in `./binaries` you'll find `vmlinuz` and `ramfs` that you can use for pxeboot
