@@ -1,6 +1,8 @@
 #!/bin/bash
 # create workdir
 KVER=4.13.0-19-generic
+SUDO=""
+[ $(awk -F/ '$2 == "docker"' /proc/self/cgroup) -ne 0 ] && SUDO="sudo "
 
 source initramfs-tools/initramfs.conf
 
@@ -8,18 +10,18 @@ if [ ! -d root ] ; then
 	# if the dir exists, we assume that part is already done
 	# Otherwise:
 	mkdir root
-	sudo debootstrap --arch=amd64 ${DISTRO} root
+	${SUDO} debootstrap --arch=amd64 ${DISTRO} root
 	# add packages
-	sudo cp ays-chroot pkglist adaptdistro root
-	sudo chroot root chmod +x adaptdistro
-	sudo chroot root /adaptdistro
+	${SUDO} cp ays-chroot pkglist adaptdistro root
+	${SUDO} chroot root chmod +x adaptdistro
+	${SUDO} chroot root /adaptdistro
 fi
 
 # build initramfs with running kernel modules
 [ ! -d ./bin ] && mkdir bin
 	
-sudo mkinitramfs -d initramfs-tools/ -o bin/ramfs ${KVER}
-sudo cp /boot/vmlinuz-${KVER} bin/vmlinuz
-sudo chown $(whoami):$(whoami) bin/*
+${SUDO} mkinitramfs -d initramfs-tools/ -o bin/ramfs ${KVER}
+${SUDO} cp /boot/vmlinuz-${KVER} bin/vmlinuz
+${SUDO} chown $(whoami):$(whoami) bin/*
 
 
