@@ -1,5 +1,8 @@
 #!/bin/bash
 # create workdir
+
+set -x
+
 KVER=4.13.0-19-generic
 
 # when running in a docker, we're root (no sudo)

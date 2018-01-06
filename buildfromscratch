@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# build the docker image, not much is needed, so we build it every time
+
+docker build . -t 911builder:latest
+
+# build it, you'll find the build result in ./binaries
+docker run --rm -v $(pwd)/binarisr:/binaries 911builder:latest
+
+# that's all folks
+# https://www.youtube.com/watch?v=b9434BoGkNQ
