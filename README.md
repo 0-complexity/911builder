@@ -84,7 +84,7 @@ docker build -t 911builder:latest .
 
 # and run the builder
 
-docker run -v $(pwd)/binaries:/binaries 911builder:latest
+docker run --privileged --rm -v $(pwd)/binaries:/binaries 911builder:latest
 
 ```
 
