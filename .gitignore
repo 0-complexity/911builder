@@ -2,3 +2,4 @@
 ramfs
 # not the root tree
 root/**
+binaries/*

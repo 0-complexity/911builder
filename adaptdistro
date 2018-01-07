@@ -7,7 +7,7 @@ apt update
 
 export DEBIAN_FRONTEND=noninteractive
 
-while read line ; do 
+while read line ; do
   apt -q -y install $line
 done <<< $(cat pkglist)
 
@@ -23,6 +23,12 @@ Name=en*
 DHCP=yes
 EOF
 systemctl enable systemd-networkd
+systemctl disable networking
+
+# give it a sensible hostname
+echo "911" > /etc/hostname
+echo "127.0.0.1 911"
+echo "::1 911"
 
 # get resolving working
 echo "nameserver 8.8.8.8" >> /etc/resolvconf/resolv.conf.d/head
