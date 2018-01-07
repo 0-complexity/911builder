@@ -1,4 +1,6 @@
 #!/bin/bash
+# cleanup
+sudo rm -f binaries/*
 
 # build the docker image, not much is needed, so we build it every time
 docker rmi 911builder:latest
