@@ -29,7 +29,7 @@ sudo apt install linux-image-4.13.0-21-generic linux-image-extra-4.13.0-21-gener
 
 
 # get the builder (is also a submodule in https://github.com/0-complexity/G8OS_boot)
-git clone git@github.com/PurePeople/911builder 911builder
+git clone git@github.com/PurePeople/911builder.git
 
 cd 911builder
 # remove ./root when it's your first time
@@ -43,7 +43,7 @@ rm -rf ./root
 # other necessary packages from "pkglist" get installed
 # when finished , you'll find a file "ramfs" -> that is the initrd
 
-ls bin
+ls binaries
 
 
 ```
@@ -52,8 +52,9 @@ That'll create a `ramfs` file. Together with the __running__ kernel of your host
 you can boot it as 
 
 
-  - snippet of vm's xml for booting it
-```
+  - snippet of vm's xml for booting it  
+
+```xml
   <os>
     <type arch='x86_64' machine='pc-i440fx-2.11'>hvm</type>
     <kernel>/boot/vmlinuz</kernel>
@@ -77,7 +78,7 @@ I assume you (by now) know how to install/use docker, so that will not be handel
 Simple:
 
 ```
-cd $(pwd)/docker
+cd docker
 
 # create your work image
 docker build -t 911builder:latest .
@@ -89,3 +90,12 @@ docker run --privileged --rm -v $(pwd)/binaries:/binaries 911builder:latest
 ```
 
 then, in `./binaries` you'll find `vmlinuz` and `ramfs` that you can use for pxeboot
+
+
+### Or, Of course,
+
+you can just build it with
+
+```sh
+./buildfromscratch
+```
