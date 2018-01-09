@@ -35,7 +35,7 @@ case "$MOBO" in
 	# some reasonable defaults ;-)
 	BONDIFACES=( $DEVICE )
 	MGMT=('ovs' '2311')
-	DISKS=( vda vdb )
+	DISKS=( sda sdb )
 	;;
 esac
 
@@ -87,26 +87,27 @@ function zappit(){
 
 function genpartbios(){
     mdadm --stop --scan
-	if [ ${#DISKS[@]} -eq 1 ] ; then
-		parted /dev/${DISK[0]} -s mklabel gpt \
+	if [ ${#DISKSS[@]} -eq 1 ] ; then
+		parted /dev/${DISKS[0]} -s mklabel gpt \
 			mkpart bios ext2 1 8M \
 			mkpart swap linux-swap 8M 8G \
 			mkpart boot ext2 8G 10G \
-			mkpart md raid 10G 100% \
-			set 1 bios_grub on set 3 raid on
+			mkpart root ext2 10G 100% \
+			set 1 bios_grub on set 2 raid on set 4 raid on
     else
-		parted /dev/${DISK[0]} -s mklabel gpt \
+		parted /dev/${DISKS[0]} -s mklabel gpt \
 			mkpart bios ext2 1 8M \
 			mkpart boot ext2 8G 10G \
 			mkpart swap linux-swap 8M 8G \
-			mkpart md raid 10G 100% \
-			set 1 bios_grub on set 3 raid on
-		parted /dev/${DISK[1]} -s mklabel gpt \
+			mkpart root ext2 10G 100% \
+			set 1 bios_grub on set 2 raid on set 4 raid on
+
+		parted /dev/${DISKS[1]} -s mklabel gpt \
 			mkpart bios ext2 1 8M \
 			mkpart boot ext2 8G 10G \
 			mkpart swap linux-swap 8M 8G \
-			mkpart md raid 10G 100% \
-			set 1 bios_grub on set 3 raid on
+			mkpart root ext2 10G 100% \
+			set 1 bios_grub on set 2 raid on set 4 raid on
 	fi
     # need to sleep here a bit for udev to settle
 	udevadm settle
@@ -116,13 +117,13 @@ function genpartbios(){
 
 function prepmounts(){
     # prepare /boot
-    yes | mdadm --create /dev/md0 -l1 -n2 /dev/${DISK[0]}2 /dev/${DISK[1]}2 --force
+    yes | mdadm --create /dev/md0 -l1 -n2 /dev/${DISKS[0]}2 /dev/${DISKS[1]}2 --force
     sysctl -w dev.raid.speed_limit_max=10
     sysctl -w dev.raid.speed_limit_min=10
     mkfs.ext4 -L BOOT /dev/md0
 
     # prepare root partition
-    yes | mdadm --create /dev/md1 -l1 -n2 /dev/${DISK[0]}4 /dev/${DISK[1]}4 --force
+    yes | mdadm --create /dev/md1 -l1 -n2 /dev/${DISKS[0]}4 /dev/${DISKS[1]}4 --force
 	mkfs.ext4 /dev/md1 -E lazy_itable_init=1
 
     # mount it
@@ -134,13 +135,13 @@ function prepmounts(){
 
 function prepmountssingle(){
     # prepare /boot
-    yes | mdadm --create /dev/md0 -l1 -n2 /dev/${DISK[0]}2 missing --force
+    yes | mdadm --create /dev/md0 -l1 -n2 /dev/${DISKS[0]}2 missing --force
     sysctl -w dev.raid.speed_limit_max=10
     sysctl -w dev.raid.speed_limit_min=10
     mkfs.ext4 -L BOOT /dev/md0
 
     # prepare root partition
-    yes | mdadm --create /dev/md1 -l1 -n2 /dev/${DISK[0]}4 missing --force
+    yes | mdadm --create /dev/md1 -l1 -n2 /dev/${DISKS[0]}4 missing --force
 	mkfs.ext4 /dev/md1 -E lazy_itable_init=1
 
     # mount it
@@ -193,7 +194,6 @@ iface ${IFC} inet static
   pre-up ovs-vsctl --may-exist add-br mgmt
   pre-up ovs-vsstl--may-exist add-port mgmt ${IFC}
 EOF
-fi
 }
 
 function prepsys(){
@@ -268,8 +268,8 @@ function installgrub(){
 echo "" > /etc/mdadm/mdadm.conf
 update-initramfs -c -k all
 rm -f /boot/grub/grub.cfg
-grub-install --force /dev/${DISK1}
-grub-install --force /dev/${DISK2} &> /dev/null
+grub-install --force /dev/${DISKS[0]}
+grub-install --force /dev/${DISKS[1]} &> /dev/null
 # sed -ie 's/#GRUB_TERMINAL/GRUB_TERMINAL="serial console"/' /etc/default/grub
 cat << EEOF >> /etc/default/grub
 GRUB_SERIAL_COMMAND="serial --speed=19200 --unit=0 --word=8 --parity=no --stop=1"
@@ -294,10 +294,10 @@ EOF
 function createswaps(){
     # dont forget to create swapsig
     if [ ${#DISKS[@]} -eq 1 ] ; then
-        mkswap /dev/${DISK[0]}3
+        mkswap /dev/${DISKS[0]}3
     else
-        mkswap /dev/${DISK[0]}3
-        mkswap /dev/${DISK[1]}3
+        mkswap /dev/${DISKS[0]}3
+        mkswap /dev/${DISKS[1]}3
     fi
 }
 
@@ -305,6 +305,7 @@ function mkfstab(){
     # generate fstab
     BOOTUUID=`blkid -o value /dev/md0 -s UUID`
     ROOTUUID=`blkid -o value /dev/md1 -s UUID`
+    SWAPUUID=`blkid -o value /dev/${DISKS[0]}3 -s UUID`
 
     cat <<EOF > /mnt/etc/fstab
 # <file system> <mount point>   <type>  <options>       <dump>  <pass>
@@ -313,11 +314,12 @@ sysfs           /sys    sysfs   defaults                0       0
 devtmpfs        /dev    devtmpfs        rw      0       0
 UUID=${ROOTUUID}  /     ext4 defaults,discard,data=ordered 0 0
 UUID=${BOOTUUID}  /boot ext4 defaults 0 0
-UUID=${SWAP1} none swap sw 0 0
+UUID=${SWAPUUID} none swap sw 0 0
 EOF
-	if [ $ONEDISK == 0 ] ;then
+    if [ ${#DISKS[@]} -eq 1 ] ; then
+    SWAPUUID=`blkid -o value /dev/${DISKS[1]}3 -s UUID`
     cat <<EOF >> /mnt/etc/fstab
-UUID=${SWAP2} none swap sw 0 0
+UUID=${SWAPUUID} none swap sw 0 0
 EOF
 	fi
 }
@@ -366,4 +368,4 @@ sed -i 's/^exit 0/\/sbin\/ifup backplane1\nexit 0/' /mnt/etc/rc.local
 echo "All done"
 
 # umount the stuff
-umount /mnt/boot /mnt/home /mnt
+umount /mnt/boot /mnt

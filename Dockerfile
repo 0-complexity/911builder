@@ -14,7 +14,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y install linux-headers-4.13.0-19-ge
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install squashfs-tools ipmitool
 
 # get myself (911builder) in the dock
-# ADD . /911builder/
+VOLUME . /911builder/
 
 CMD bash -c 'cd /911builder ; ./prepareroot'
 
