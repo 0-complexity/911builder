@@ -17,7 +17,7 @@ if [ ! -d root ] ; then
 	mkdir root
 	${SUDO} debootstrap --arch=amd64 ${DISTRO} root
 	# add packages
-	${SUDO} cp ays-chroot pkglist adaptdistro root
+	${SUDO} cp init-chroot pkglist adaptdistro root
 	${SUDO} chroot root chmod +x adaptdistro
 	${SUDO} chroot root /adaptdistro
 fi
