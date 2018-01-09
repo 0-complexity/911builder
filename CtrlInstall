@@ -1,18 +1,41 @@
 #!/bin/bash
-# get networking config in order
 MOBO=`sudo dmidecode -t 2 | awk '/Product Name:/{print $3}'`
+source /run/net-*.conf
+
+# new variables to fill in :
+HOSTNAME=BE-LOC-4-ctrl-01
+DOMAIN=BE-LOC-4
+NETBASE=10.12
+NETLSB=1
+MASK=24
+
+MGMT=0 ; MGMTVLAN=2311
+STOR=2 ; STORVLAN=2315
+UNTAG=1
+
+
+PUBIP=185.69.166.21
+PUBMASK=24
+PUBGW=185.69.166.1
+
+MGMTIP=${NETBASE}.${MGMT}.${NETLSB}
+UNTAGIP=${NETBASE}.${UNTAG}.${NETLSB}
+STORIP=${NETBASE}.${STOR}.${NETLSB}
+
 # OSIMAGE="ubuntu-16.04.3-20171028.tgz"
 OSIMAGE="ubuntu-16.04.3-20171130.tgz"
+
 case "$MOBO" in
    G1SCN-B) # Gooxi Controller node
 	BONDIFACES=('enp4s0')
 	MGMT=('enp3s0')
-	OSIMAGE="ubu-16.04-generic-raid1.tgz"
+	DISKS=( sda sdb )
 	;;
    *)
 	# some reasonable defaults ;-)
 	BONDIFACES=( $DEVICE )
 	MGMT=('ovs' '2311')
+	DISKS=( vda vdb )
 	;;
 esac
 
@@ -53,7 +76,7 @@ function zappit(){
         echo -e 'x\nz\ny\ny\n' | gdisk /dev/disk/by-id/${i}
 		udevadm settle
         partprobe /dev/disk/by-id/${i}
-    done
+	done
     ##
     mdadm --stop --scan
     if ! [ -z "`ls /dev/disk/by-id/ | grep part`" ] ; then
@@ -102,7 +125,6 @@ function prepmounts(){
     yes | mdadm --create /dev/md1 -l1 -n2 /dev/${DISK1}4 /dev/${DISK2}4 --force
 	mkfs.ext4 /dev/md1 -E lazy_itable_init=1
 
-
     # mount it
 	mount /dev/md1 /mnt
 
@@ -128,12 +150,21 @@ function prepmountssingle(){
     mount /dev/md0 /mnt/boot
 }
 
+# TODO errcheck here
 function untarit(){
-    OURFILESERVER="${OURFILESERVER:-$fullroot}"
-    # INSTALL
-    URL="${OURFILESERVER}/${OSIMAGE}"
-    # get the 'image' and pour it in the mountpoint
-    wget -qO - $URL | tar --numeric-owner -zxf - -C /mnt
+	if [ "$OURFILESERVER" = "LOCAL" ]; then
+		# we're on our own, no network
+		mkdir -p /root/USB
+		mount -L GIGINSTALL /root/USB
+		# and untar it
+		tar --numeric-owner -zxf /root/USB/${OSIMAGE} -C /mnt
+	else
+		OURFILESERVER="${OURFILESERVER:-$fullroot}"
+		# INSTALL
+		URL="${OURFILESERVER}/${OSIMAGE}"
+		# get the 'image' and pour it in the mountpoint
+		wget -qO - $URL | tar --numeric-owner -zxf - -C /mnt
+	fi
 }
 
 function findifaces(){
@@ -149,24 +180,18 @@ function findifaces(){
 }
 
 function mgmtiface(){
-if [ "${MGMT[0]}" == "ovs" ] ; then
-    IFC="mgmt"
-else
-    IFC=$1
-fi
+	local IFC ADDR GATEWAY
+	IFC=$1 ; shift
+	ADDR=$1
+	[ ${NETLSB} -ne 1 ] && GATEWAY="  gateway ${NETBASE}.${MGMT}.1"
     cat << EOF > /mnt/etc/network/interfaces.d/mgmt.conf
 ### ${IFC}
 auto ${IFC}
 iface ${IFC} inet static
-  address ${IPV4ADDR}
-  netmask ${IPV4NETMASK}
-  gateway ${IPV4GATEWAY}
-  dns-nameservers ${ROOTSERVER}
-EOF
-if [ "${MGMT[0]}" == "ovs" ] ; then
-    cat << EOF >> /mnt/etc/network/interfaces.d/mgmt.conf
-  pre-up ovs-vsctl --may-exist add-br backplane1
-  pre-up ovs-vsstl--may-exist add-port backplane1 mgmt tag=${MGMT[1]} -- set Interface mgmt type=internal
+  address ${ADDR}/24
+  ${GATEWAY}
+  pre-up ovs-vsctl --may-exist add-br mgmt
+  pre-up ovs-vsstl--may-exist add-port mgmt ${IFC}
 EOF
 fi
 }
@@ -187,9 +212,7 @@ if [ ${#BONDIFACES[@]} -gt 1 ] ; then
 ### backplane1
 auto backplane1
 iface backplane1 inet static
-  address ${BKPLNIP}
-  netmask ${IPV4NETMASK}
-  dns-nameserver ${IPV4DNS0}
+  address ${UNTAGIP}/${MASK}
 EOF
   for iface in ${BONDIFACES[@]} ; do
 	 echo "  pre-up ip l set ${iface} up " >> /mnt/etc/network/interfaces.d/Backplane1.conf
@@ -198,22 +221,20 @@ EOF
   echo "  pre-up ovs-vsctl --may-exist add-br backplane1"  >> /mnt/etc/network/interfaces.d/Backplane1.conf
   echo "  pre-up ovs-vsctl --may-exist add-bond backplane1 bond-backplane1 ${BONDIFACES[@]} bond_mode=balance-tcp lacp=active"  >> /mnt/etc/network/interfaces.d/Backplane1.conf
   # and mgmt iface =
-  mgmtiface ${MGMT[0]}
+  mgmtiface ${MGMT[0]} ${MGMTIP}
 
 else
    cat << EOF > /mnt/etc/network/interfaces.d/Backplane1.conf
 ### backplane1
 auto backplane1
 iface backplane1 inet static
-  address ${BKPLNIP}
-  netmask ${IPV4NETMASK}
-  dns-nameserver ${IPV4DNS0}
+  address ${UNTAGIP}/${MASK}
   pre-up ovs-vsctl --may-exist add-br backplane1
   pre-up ovs-vsctl --may-exist add-port backplane1 ${BONDIFACES[0]}
   pre-up ip l set ${BONDIFACES[0]} up
   pre-up sysctl -w net.ipv6.conf.${BONDIFACES[0]}.disable_ipv6=1
 EOF
-  mgmtiface ${MGMT[0]}
+  mgmtiface ${MGMT[0]} ${MGMTIP}
 
 fi
 
@@ -238,14 +259,6 @@ cat << EOF > /mnt/etc/udev/rules.d/70-persistent-net.rules
 # line, and change only the value of the NAME= key.
 
 EOF
-
-# Also, remove udevd wwn creation in /dev/discs/by-id
-sed -i -e '/wwn/ s/^#*/# /' /mnt/lib/udev/rules.d/60-persistent-storage.rules
-
-# Also, if QCT, fix initramfs
-if [ "$MOBO" = "S2P-MB" ] ; then
-	fixQCTinitramfs
-fi
 
 }
 
@@ -274,7 +287,7 @@ for i in {.,auth*,kern*,syslog*} ; do chown syslog:adm /var/log/${i} ; done
 EOF
 
     chmod 755 /mnt/rungrub
-    ./ays-chroot /mnt /rungrub
+    ./init-chroot /mnt /rungrub
 }
 
 
@@ -291,22 +304,14 @@ function createswaps(){
 function mkfstab(){
     # generate fstab
     BOOTUUID=`blkid -o value /dev/md0 -s UUID`
-	if [ $ONEDISK == 1 ] ; then
-		SWAP1=`blkid -o value /dev/${DISK}3 -s UUID`
-                ROOTUUID=`blkid -o value /dev/${DISK1}4 -s UUID`
-        else
-                ROOTUUID=`blkid -o value /dev/${DISK1}4 -s UUID`
-	        SWAP1=`blkid -o value /dev/${DISK1}3 -s UUID`
-		SWAP2=`blkid -o value /dev/${DISK2}3 -s UUID`
-	fi
+    ROOTUUID=`blkid -o value /dev/md1 -s UUID`
 
     cat <<EOF > /mnt/etc/fstab
 # <file system> <mount point>   <type>  <options>       <dump>  <pass>
 proc            /proc   proc    defaults                0       0
 sysfs           /sys    sysfs   defaults                0       0
 devtmpfs        /dev    devtmpfs        rw      0       0
-UUID=${ROOTUUID}  /     btrfs space_cache,compress=lzo,autodefrag,subvol=@ 0 0
-UUID=${ROOTUUID}  /home btrfs space_cache,compress=lzo,autodefrag,subvol=@home 0 0
+UUID=${ROOTUUID}  /     ext4 defaults,discard,data=ordered 0 0
 UUID=${BOOTUUID}  /boot ext4 defaults 0 0
 UUID=${SWAP1} none swap sw 0 0
 EOF
@@ -317,56 +322,11 @@ EOF
 	fi
 }
 
-function uefifstab(){
-  EFI=`blkid -o value /dev/${DISK1}1 -s UUID`
-  EFI2=`blkid -o value /dev/${DISK2}1 -s UUID`
-  cat << EOF >> /mnt/etc/fstab
-UUID=${EFI} /boot/efi vfat defaults 0 0
-UUID=${EFI2} /boot/efi2 vfat defaults 0 0
-EOF
-}
-
-function findssds(){
-
-        alldisks=`cd /sys/block ; ls -d sd[a-z] ; ls -d sd[a-z][a-z]`
-        ssds=$(for i in $alldisks ; do if [ `cat /sys/block/${i}/queue/rotational` -eq 0 ] ; then echo $i; fi ; done)
-        # find 2 of same size
-        declare -a ssdarr ; cnt=1
-        for i in $ssds ; do
-                ssdarr[$cnt]=`cat /sys/block/${i}/size`
-                let cnt++
-        done
-        for i in "${!ssdarr[@]}" ; do
-                if [ "${ssdarr[i]}" = "${ssdarr[i+1]}" ] ; then
-                        DISK1=`echo $ssds | cut -d" " -f${i}`
-                        DISK2=`echo $ssds | cut -d" " -f$((i+1))`
-			break
-                fi
-        done
-        # if only 2 ssd's work with that
-        if [ `echo $ssds | wc -w` -le 2 ] ; then
-            DISK1=`echo $ssds | cut -d " " -f1`
-            DISK2=`echo $ssds | cut -d " " -f2`
-        fi
-	if [ `echo $ssds | wc -w` -le 1 ] ; then
-	    DISK=`echo $ssds | cut -d " " -f1`
-	    ONEDISK=1
-	fi
-}
-
-
-# [ ! $# -ge 1 ] && echo "$0 hostname [osimage] [fileserver/path (in URL notation)]" && exit 1
 
 # PXE created environment
-source /run/net-*.conf
 eval $( cat /proc/cmdline ) &> /dev/null
-LSBIP=$(echo $IPV4ADDR | awk -F . '{printf "%02d",$4}')
-BKPLNIP=`echo $IPV4ADDR | awk -F . '{print $1"."$2"."$3-1"."$4}'`
-STORIP=`echo $IPV4ADDR | awk -F . '{print $1"."$2"."$3+1"."$4}'`
-STORMAC="80:22:c0:ff:ee:${LSBIP}"
-HOSTNUM=`echo $IPV4ADDR | awk -F . '{printf "%02d",$4 - 100}'`
-AYSHOSTNAME=${HOSTNAME,,}.${DNSDOMAIN,,}
-OURFILESERVER=$fullroot
+AYSHOSTNAME=${HOSTNAME}.${DNSDOMAIN}
+OURFILESERVER=${fullroot:-LOCAL}
 
 # to use findifaces, you need to create an empty BONDIFACES array
 if [ ${#BONDIFACES[@]} -eq 0 ] ; then
