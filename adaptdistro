@@ -43,5 +43,5 @@ echo "root:rooter" | chpasswd
 echo "gig:rooter" | chpasswd
 
 mkdir /root/tools > /dev/null 2>&1
-mv /ays-chroot /root/tools
-chmod 755 /root/tools/ays-chroot
+mv /init-chroot /root/tools
+chmod 755 /root/tools/init-chroot
