@@ -1,0 +1,408 @@
+#!/bin/bash
+# get networking config in order
+MOBO=`sudo dmidecode -t 2 | awk '/Product Name:/{print $3}'`
+# OSIMAGE="ubuntu-16.04.3-20171028.tgz"
+OSIMAGE="ubuntu-16.04.3-20171130.tgz"
+case "$MOBO" in
+   G1SCN-B) # Gooxi Controller node
+	BONDIFACES=('enp4s0')
+	MGMT=('enp3s0')
+	OSIMAGE="ubu-16.04-generic-raid1.tgz"
+	;;
+   *)
+	# some reasonable defaults ;-)
+	BONDIFACES=( $DEVICE )
+	MGMT=('ovs' '2311')
+	;;
+esac
+
+function zappit(){
+    ## zappitall
+    ## first, zero out evt fs headers from partitions
+    parts=`ls /dev/disk/by-id/ | awk '/part/&&!/wwn/{print}'`
+    for i in $parts ; do
+        dd if=/dev/zero of=/dev/disk/by-id/${i} bs=1M count=100 &
+    done
+    wait
+    sync
+
+    # same for md devices that could contain an fs
+    parts=`ls /dev/disk/by-id/ | awk '/part/&&!/wwn/{print}'`
+    mds=`mdadm --detail --scan | awk '/ARRAY/{print $2}'`
+    for i in $mds ; do
+        dd if=/dev/zero of=$i bs=1M count=100 &
+    done
+    wait
+    sync
+
+    # now stop evt raids
+    mdadm --stop --scan
+    # erase evt superblocks from md partitions
+	echo $parts
+    for i in $parts ; do
+        mdadm --zero-superblock --force /dev/disk/by-id/${i}
+    done
+    # we should need :apt-get install gdisk but it's on the rescue of OVH
+    # Now we can drop all partition tables
+    disks=`ls /dev/disk/by-id/ | awk  '/scsi|ata/{gsub(/\-part.*/,"");print}'|uniq`
+    for i in $disks ; do
+        # destruct, destroy, obliterate
+        SIZE=`blockdev --getsz /dev/disk/by-id/${i}`
+        dd if=/dev/zero seek=$(($SIZE - 1024)) bs=512 count=1024 of=/dev/disk/by-id/${i}
+        dd if=/dev/zero of=/dev/disk/by-id/${i} bs=1M count=10 && sync
+        echo -e 'x\nz\ny\ny\n' | gdisk /dev/disk/by-id/${i}
+		udevadm settle
+        partprobe /dev/disk/by-id/${i}
+    done
+    ##
+    mdadm --stop --scan
+    if ! [ -z "`ls /dev/disk/by-id/ | grep part`" ] ; then
+        echo not everything is cleared
+        exit 1
+    fi
+}
+
+function genpartbios(){
+    mdadm --stop --scan
+	if [ $ONEDISK == 1 ] ; then
+		parted /dev/${DISK} -s mklabel gpt \
+			mkpart bios ext2 1 8M \
+			mkpart swap linux-swap 8M 8G \
+			mkpart boot ext2 8G 10G \
+			mkpart md raid 10G 100% \
+			set 1 bios_grub on set 3 raid on
+    else
+		parted /dev/${DISK1} -s mklabel gpt \
+			mkpart bios ext2 1 8M \
+			mkpart boot ext2 8G 10G \
+			mkpart swap linux-swap 8M 8G \
+			mkpart md raid 10G 100% \
+			set 1 bios_grub on set 3 raid on
+		parted /dev/${DISK2} -s mklabel gpt \
+			mkpart bios ext2 1 8M \
+			mkpart boot ext2 8G 10G \
+			mkpart swap linux-swap 8M 8G \
+			mkpart md raid 10G 100% \
+			set 1 bios_grub on set 3 raid on
+	fi
+    # need to sleep here a bit for udev to settle
+	udevadm settle
+    sleep 2
+    mdadm --stop --scan
+}
+
+function prepmounts(){
+    # prepare /boot
+    yes | mdadm --create /dev/md0 -l1 -n2 /dev/${DISK1}2 /dev/${DISK2}2 --force
+    sysctl -w dev.raid.speed_limit_max=10
+    sysctl -w dev.raid.speed_limit_min=10
+    mkfs.ext4 -L BOOT /dev/md0
+
+    # prepare root partition
+    yes | mdadm --create /dev/md1 -l1 -n2 /dev/${DISK1}4 /dev/${DISK2}4 --force
+	mkfs.ext4 /dev/md1 -E lazy_itable_init=1
+
+
+    # mount it
+	mount /dev/md1 /mnt
+
+    mkdir /mnt/boot
+    mount /dev/md0 /mnt/boot
+}
+
+function prepmountssingle(){
+    # prepare /boot
+    yes | mdadm --create /dev/md0 -l1 -n2 /dev/${DISK1}2 missing --force
+    sysctl -w dev.raid.speed_limit_max=10
+    sysctl -w dev.raid.speed_limit_min=10
+    mkfs.ext4 -L BOOT /dev/md0
+
+    # prepare root partition
+    yes | mdadm --create /dev/md1 -l1 -n2 /dev/${DISK1}4 missing --force
+	mkfs.ext4 /dev/md1 -E lazy_itable_init=1
+
+    # mount it
+	mount /dev/md1 /mnt
+
+    mkdir /mnt/boot
+    mount /dev/md0 /mnt/boot
+}
+
+function untarit(){
+    OURFILESERVER="${OURFILESERVER:-$fullroot}"
+    # INSTALL
+    URL="${OURFILESERVER}/${OSIMAGE}"
+    # get the 'image' and pour it in the mountpoint
+    wget -qO - $URL | tar --numeric-owner -zxf - -C /mnt
+}
+
+function findifaces(){
+    # we're looking for fast nics
+    IFACES=""
+    for i in /sys/class/net/* ; do
+        if ethtool ${i##*/}  2> /dev/null | grep -E '1000|10000|40000' &>/dev/null ; then
+            IFACES=${IFACES}" ${i##*/}"
+        fi
+    done
+    echo ${IFACES:-eth0 eth1}
+
+}
+
+function mgmtiface(){
+if [ "${MGMT[0]}" == "ovs" ] ; then
+    IFC="mgmt"
+else
+    IFC=$1
+fi
+    cat << EOF > /mnt/etc/network/interfaces.d/mgmt.conf
+### ${IFC}
+auto ${IFC}
+iface ${IFC} inet static
+  address ${IPV4ADDR}
+  netmask ${IPV4NETMASK}
+  gateway ${IPV4GATEWAY}
+  dns-nameservers ${ROOTSERVER}
+EOF
+if [ "${MGMT[0]}" == "ovs" ] ; then
+    cat << EOF >> /mnt/etc/network/interfaces.d/mgmt.conf
+  pre-up ovs-vsctl --may-exist add-br backplane1
+  pre-up ovs-vsstl--may-exist add-port backplane1 mgmt tag=${MGMT[1]} -- set Interface mgmt type=internal
+EOF
+fi
+}
+
+function prepsys(){
+    echo $AYSHOSTNAME > /mnt/etc/hostname
+    cat << EOF > /mnt/etc/network/interfaces
+# The loopback interface
+# Interfaces that comes with Debian Potato does not like to see
+# "auto" option before "iface" for the first device specified.
+iface lo inet loopback
+auto lo
+source /etc/network/interfaces.d/*conf
+EOF
+
+if [ ${#BONDIFACES[@]} -gt 1 ] ; then
+  cat << EOF > /mnt/etc/network/interfaces.d/Backplane1.conf
+### backplane1
+auto backplane1
+iface backplane1 inet static
+  address ${BKPLNIP}
+  netmask ${IPV4NETMASK}
+  dns-nameserver ${IPV4DNS0}
+EOF
+  for iface in ${BONDIFACES[@]} ; do
+	 echo "  pre-up ip l set ${iface} up " >> /mnt/etc/network/interfaces.d/Backplane1.conf
+	 echo "  pre-up sysctl -w net.ipv6.conf.${iface}.disable_ipv6=1"  >> /mnt/etc/network/interfaces.d/Backplane1.conf
+  done
+  echo "  pre-up ovs-vsctl --may-exist add-br backplane1"  >> /mnt/etc/network/interfaces.d/Backplane1.conf
+  echo "  pre-up ovs-vsctl --may-exist add-bond backplane1 bond-backplane1 ${BONDIFACES[@]} bond_mode=balance-tcp lacp=active"  >> /mnt/etc/network/interfaces.d/Backplane1.conf
+  # and mgmt iface =
+  mgmtiface ${MGMT[0]}
+
+else
+   cat << EOF > /mnt/etc/network/interfaces.d/Backplane1.conf
+### backplane1
+auto backplane1
+iface backplane1 inet static
+  address ${BKPLNIP}
+  netmask ${IPV4NETMASK}
+  dns-nameserver ${IPV4DNS0}
+  pre-up ovs-vsctl --may-exist add-br backplane1
+  pre-up ovs-vsctl --may-exist add-port backplane1 ${BONDIFACES[0]}
+  pre-up ip l set ${BONDIFACES[0]} up
+  pre-up sysctl -w net.ipv6.conf.${BONDIFACES[0]}.disable_ipv6=1
+EOF
+  mgmtiface ${MGMT[0]}
+
+fi
+
+# Also, to make glibc happy, add hostname to /etc/hosts
+    cat << EOF > /mnt/etc/hosts
+127.0.0.1   localhost $AYSHOSTNAME
+
+# The following lines are desirable for IPv6 capable hosts
+::1     localhost ip6-localhost ip6-loopback $AYSHOSTNAME
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+EOF
+
+# Also remove OpenVSwitch initial db
+rm -f /mnt/etc/openvswitch/*
+# same for persitent net-rules
+cat << EOF > /mnt/etc/udev/rules.d/70-persistent-net.rules
+# This file was automatically generated by the /lib/udev/write_net_rules
+# program, run by the persistent-net-generator.rules rules file.
+#
+# You can modify it, as long as you keep each rule on a single
+# line, and change only the value of the NAME= key.
+
+EOF
+
+# Also, remove udevd wwn creation in /dev/discs/by-id
+sed -i -e '/wwn/ s/^#*/# /' /mnt/lib/udev/rules.d/60-persistent-storage.rules
+
+# Also, if QCT, fix initramfs
+if [ "$MOBO" = "S2P-MB" ] ; then
+	fixQCTinitramfs
+fi
+
+}
+
+function installgrub(){
+    cat << EOF > /mnt/rungrub
+#!/bin/bash
+echo "" > /etc/mdadm/mdadm.conf
+update-initramfs -c -k all
+rm -f /boot/grub/grub.cfg
+grub-install --force /dev/${DISK1}
+grub-install --force /dev/${DISK2} &> /dev/null
+# sed -ie 's/#GRUB_TERMINAL/GRUB_TERMINAL="serial console"/' /etc/default/grub
+cat << EEOF >> /etc/default/grub
+GRUB_SERIAL_COMMAND="serial --speed=19200 --unit=0 --word=8 --parity=no --stop=1"
+EEOF
+sed -ie 's/^GRUB_CMDLINE_LINUX_DEFAULT.*/GRUB_CMDLINE_LINUX_DEFAULT="console=tty0 intel_iommu=on"/g' /etc/default/grub
+# sed -ie 's/^GRUB_SAVEDEFAULT.*/GRUB_SAVEDEFAULT=false/g' /etc/default/grub
+sed -e '/Waiting for/ {n; s/sleep.*/sleep 5/g}' -e '/up to/{n ; s/sleep.*/sleep 5/g}' /etc/init/failsafe.conf > /tmp/fs.conf
+mv -f /tmp/fs.conf /etc/init/failsafe.conf
+echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
+
+update-grub
+rm -f rungrub
+# Fix some permissions
+for i in {.,auth*,kern*,syslog*} ; do chown syslog:adm /var/log/${i} ; done
+EOF
+
+    chmod 755 /mnt/rungrub
+    ./ays-chroot /mnt /rungrub
+}
+
+
+function createswaps(){
+    # dont forget to create swapsig
+    if [ $ONEDISK == 1 ] ; then
+        mkswap /dev/${DISK}3
+    else
+        mkswap /dev/${DISK1}3
+        mkswap /dev/${DISK2}3
+    fi
+}
+
+function mkfstab(){
+    # generate fstab
+    BOOTUUID=`blkid -o value /dev/md0 -s UUID`
+	if [ $ONEDISK == 1 ] ; then
+		SWAP1=`blkid -o value /dev/${DISK}3 -s UUID`
+                ROOTUUID=`blkid -o value /dev/${DISK1}4 -s UUID`
+        else
+                ROOTUUID=`blkid -o value /dev/${DISK1}4 -s UUID`
+	        SWAP1=`blkid -o value /dev/${DISK1}3 -s UUID`
+		SWAP2=`blkid -o value /dev/${DISK2}3 -s UUID`
+	fi
+
+    cat <<EOF > /mnt/etc/fstab
+# <file system> <mount point>   <type>  <options>       <dump>  <pass>
+proc            /proc   proc    defaults                0       0
+sysfs           /sys    sysfs   defaults                0       0
+devtmpfs        /dev    devtmpfs        rw      0       0
+UUID=${ROOTUUID}  /     btrfs space_cache,compress=lzo,autodefrag,subvol=@ 0 0
+UUID=${ROOTUUID}  /home btrfs space_cache,compress=lzo,autodefrag,subvol=@home 0 0
+UUID=${BOOTUUID}  /boot ext4 defaults 0 0
+UUID=${SWAP1} none swap sw 0 0
+EOF
+	if [ $ONEDISK == 0 ] ;then
+    cat <<EOF >> /mnt/etc/fstab
+UUID=${SWAP2} none swap sw 0 0
+EOF
+	fi
+}
+
+function uefifstab(){
+  EFI=`blkid -o value /dev/${DISK1}1 -s UUID`
+  EFI2=`blkid -o value /dev/${DISK2}1 -s UUID`
+  cat << EOF >> /mnt/etc/fstab
+UUID=${EFI} /boot/efi vfat defaults 0 0
+UUID=${EFI2} /boot/efi2 vfat defaults 0 0
+EOF
+}
+
+function findssds(){
+
+        alldisks=`cd /sys/block ; ls -d sd[a-z] ; ls -d sd[a-z][a-z]`
+        ssds=$(for i in $alldisks ; do if [ `cat /sys/block/${i}/queue/rotational` -eq 0 ] ; then echo $i; fi ; done)
+        # find 2 of same size
+        declare -a ssdarr ; cnt=1
+        for i in $ssds ; do
+                ssdarr[$cnt]=`cat /sys/block/${i}/size`
+                let cnt++
+        done
+        for i in "${!ssdarr[@]}" ; do
+                if [ "${ssdarr[i]}" = "${ssdarr[i+1]}" ] ; then
+                        DISK1=`echo $ssds | cut -d" " -f${i}`
+                        DISK2=`echo $ssds | cut -d" " -f$((i+1))`
+			break
+                fi
+        done
+        # if only 2 ssd's work with that
+        if [ `echo $ssds | wc -w` -le 2 ] ; then
+            DISK1=`echo $ssds | cut -d " " -f1`
+            DISK2=`echo $ssds | cut -d " " -f2`
+        fi
+	if [ `echo $ssds | wc -w` -le 1 ] ; then
+	    DISK=`echo $ssds | cut -d " " -f1`
+	    ONEDISK=1
+	fi
+}
+
+
+# [ ! $# -ge 1 ] && echo "$0 hostname [osimage] [fileserver/path (in URL notation)]" && exit 1
+
+# PXE created environment
+source /run/net-*.conf
+eval $( cat /proc/cmdline ) &> /dev/null
+LSBIP=$(echo $IPV4ADDR | awk -F . '{printf "%02d",$4}')
+BKPLNIP=`echo $IPV4ADDR | awk -F . '{print $1"."$2"."$3-1"."$4}'`
+STORIP=`echo $IPV4ADDR | awk -F . '{print $1"."$2"."$3+1"."$4}'`
+STORMAC="80:22:c0:ff:ee:${LSBIP}"
+HOSTNUM=`echo $IPV4ADDR | awk -F . '{printf "%02d",$4 - 100}'`
+AYSHOSTNAME=${HOSTNAME,,}.${DNSDOMAIN,,}
+OURFILESERVER=$fullroot
+
+# to use findifaces, you need to create an empty BONDIFACES array
+if [ ${#BONDIFACES[@]} -eq 0 ] ; then
+	BONDIFACES=( $(findifaces) )
+fi
+# set hostname to some default
+hostname ${AYSHOSTNAME}
+export HOSTNAME=${AYSHOSTNAME}
+
+# run functions
+if [ "x${DISK1}" = "x" ] ; then
+findssds
+fi
+zappit
+genpartbios
+if [ $ONEDISK == 1 ] ;then
+    prepmountssingle
+else
+    prepmounts
+fi
+untarit
+prepsys
+createswaps
+mkfstab
+installgrub
+
+# get pubkey autorized_keys
+wget ${fullroot}/pubkey -O - >> /mnt/root/.ssh/authorized_keys
+
+sed -i 's/^exit 0/\/sbin\/ifup backplane1\nexit 0/' /mnt/etc/rc.local
+# that should do it
+# tell rootserver we're done to boot in local
+
+eval `cat /proc/cmdline`
+IPRANGE=`ipcalc -b ${IPV4ADDR} ${IPV4NETMASK} | awk '/Network/{print $2}'`
+echo "All done"
+
+# umount the stuff
+umount /mnt/boot /mnt/home /mnt
