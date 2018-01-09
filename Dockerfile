@@ -9,6 +9,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y install linux-headers-4.13.0-19-ge
     linux-image-4.13.0-19-generic \
     linux-image-extra-4.13.0-19-generic \
     linux-tools-4.13.0-19-generic
+
 # some bins that copied into the initramfs
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install squashfs-tools ipmitool
 
@@ -16,5 +17,4 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y install squashfs-tools ipmitool
 ADD . /911builder/
 
 CMD bash -c 'cd /911builder ; ./prepareroot'
-
 
