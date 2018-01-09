@@ -192,7 +192,7 @@ iface ${IFC} inet static
   address ${ADDR}/24
   ${GATEWAY}
   pre-up ovs-vsctl --may-exist add-br mgmt
-  pre-up ovs-vsstl--may-exist add-port mgmt ${IFC}
+  pre-up ovs-vsctl --may-exist add-port mgmt ${IFC}
 EOF
 }
 
@@ -270,20 +270,12 @@ update-initramfs -c -k all
 rm -f /boot/grub/grub.cfg
 grub-install --force /dev/${DISKS[0]}
 grub-install --force /dev/${DISKS[1]} &> /dev/null
-# sed -ie 's/#GRUB_TERMINAL/GRUB_TERMINAL="serial console"/' /etc/default/grub
-cat << EEOF >> /etc/default/grub
-GRUB_SERIAL_COMMAND="serial --speed=19200 --unit=0 --word=8 --parity=no --stop=1"
-EEOF
-sed -ie 's/^GRUB_CMDLINE_LINUX_DEFAULT.*/GRUB_CMDLINE_LINUX_DEFAULT="console=tty0 intel_iommu=on"/g' /etc/default/grub
-# sed -ie 's/^GRUB_SAVEDEFAULT.*/GRUB_SAVEDEFAULT=false/g' /etc/default/grub
 sed -e '/Waiting for/ {n; s/sleep.*/sleep 5/g}' -e '/up to/{n ; s/sleep.*/sleep 5/g}' /etc/init/failsafe.conf > /tmp/fs.conf
 mv -f /tmp/fs.conf /etc/init/failsafe.conf
 echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
 
 update-grub
 rm -f rungrub
-# Fix some permissions
-for i in {.,auth*,kern*,syslog*} ; do chown syslog:adm /var/log/${i} ; done
 EOF
 
     chmod 755 /mnt/rungrub
@@ -316,7 +308,7 @@ UUID=${ROOTUUID}  /     ext4 defaults,discard,data=ordered 0 0
 UUID=${BOOTUUID}  /boot ext4 defaults 0 0
 UUID=${SWAPUUID} none swap sw 0 0
 EOF
-    if [ ${#DISKS[@]} -eq 1 ] ; then
+    if [ ${#DISKS[@]} -eq 2 ] ; then
     SWAPUUID=`blkid -o value /dev/${DISKS[1]}3 -s UUID`
     cat <<EOF >> /mnt/etc/fstab
 UUID=${SWAPUUID} none swap sw 0 0
@@ -361,11 +353,9 @@ if [ ! "${fullroot}" = "" ]; then
 	wget ${fullroot}/pubkey -O - >> /mnt/root/.ssh/authorized_keys
 fi
 
-sed -i 's/^exit 0/\/sbin\/ifup backplane1\nexit 0/' /mnt/etc/rc.local
-# that should do it
-# tell rootserver we're done to boot in local
-
-echo "All done"
-
 # umount the stuff
 umount /mnt/boot /mnt
+
+# that should do it
+
+echo "All done"
