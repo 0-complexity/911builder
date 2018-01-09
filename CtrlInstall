@@ -87,21 +87,21 @@ function zappit(){
 
 function genpartbios(){
     mdadm --stop --scan
-	if [ $ONEDISK == 1 ] ; then
-		parted /dev/${DISK} -s mklabel gpt \
+	if [ ${#DISKS[@]} -eq 1 ] ; then
+		parted /dev/${DISK[0]} -s mklabel gpt \
 			mkpart bios ext2 1 8M \
 			mkpart swap linux-swap 8M 8G \
 			mkpart boot ext2 8G 10G \
 			mkpart md raid 10G 100% \
 			set 1 bios_grub on set 3 raid on
     else
-		parted /dev/${DISK1} -s mklabel gpt \
+		parted /dev/${DISK[0]} -s mklabel gpt \
 			mkpart bios ext2 1 8M \
 			mkpart boot ext2 8G 10G \
 			mkpart swap linux-swap 8M 8G \
 			mkpart md raid 10G 100% \
 			set 1 bios_grub on set 3 raid on
-		parted /dev/${DISK2} -s mklabel gpt \
+		parted /dev/${DISK[1]} -s mklabel gpt \
 			mkpart bios ext2 1 8M \
 			mkpart boot ext2 8G 10G \
 			mkpart swap linux-swap 8M 8G \
@@ -116,13 +116,13 @@ function genpartbios(){
 
 function prepmounts(){
     # prepare /boot
-    yes | mdadm --create /dev/md0 -l1 -n2 /dev/${DISK1}2 /dev/${DISK2}2 --force
+    yes | mdadm --create /dev/md0 -l1 -n2 /dev/${DISK[0]}2 /dev/${DISK[1]}2 --force
     sysctl -w dev.raid.speed_limit_max=10
     sysctl -w dev.raid.speed_limit_min=10
     mkfs.ext4 -L BOOT /dev/md0
 
     # prepare root partition
-    yes | mdadm --create /dev/md1 -l1 -n2 /dev/${DISK1}4 /dev/${DISK2}4 --force
+    yes | mdadm --create /dev/md1 -l1 -n2 /dev/${DISK[0]}4 /dev/${DISK[1]}4 --force
 	mkfs.ext4 /dev/md1 -E lazy_itable_init=1
 
     # mount it
@@ -134,13 +134,13 @@ function prepmounts(){
 
 function prepmountssingle(){
     # prepare /boot
-    yes | mdadm --create /dev/md0 -l1 -n2 /dev/${DISK1}2 missing --force
+    yes | mdadm --create /dev/md0 -l1 -n2 /dev/${DISK[0]}2 missing --force
     sysctl -w dev.raid.speed_limit_max=10
     sysctl -w dev.raid.speed_limit_min=10
     mkfs.ext4 -L BOOT /dev/md0
 
     # prepare root partition
-    yes | mdadm --create /dev/md1 -l1 -n2 /dev/${DISK1}4 missing --force
+    yes | mdadm --create /dev/md1 -l1 -n2 /dev/${DISK[0]}4 missing --force
 	mkfs.ext4 /dev/md1 -E lazy_itable_init=1
 
     # mount it
@@ -293,11 +293,11 @@ EOF
 
 function createswaps(){
     # dont forget to create swapsig
-    if [ $ONEDISK == 1 ] ; then
-        mkswap /dev/${DISK}3
+    if [ ${#DISKS[@]} -eq 1 ] ; then
+        mkswap /dev/${DISK[0]}3
     else
-        mkswap /dev/${DISK1}3
-        mkswap /dev/${DISK2}3
+        mkswap /dev/${DISK[0]}3
+        mkswap /dev/${DISK[1]}3
     fi
 }
 
@@ -337,12 +337,13 @@ hostname ${AYSHOSTNAME}
 export HOSTNAME=${AYSHOSTNAME}
 
 # run functions
-if [ "x${DISK1}" = "x" ] ; then
-findssds
+if [ ${#DISKS[@]} -eq 0 ] ; then
+# findssds
+  :
 fi
 zappit
 genpartbios
-if [ $ONEDISK == 1 ] ;then
+if [ ${#DISKS[@]} -eq 1 ] ; then
     prepmountssingle
 else
     prepmounts
@@ -354,14 +355,14 @@ mkfstab
 installgrub
 
 # get pubkey autorized_keys
-wget ${fullroot}/pubkey -O - >> /mnt/root/.ssh/authorized_keys
+if [ ! "${fullroot}" = "" ]; then
+	wget ${fullroot}/pubkey -O - >> /mnt/root/.ssh/authorized_keys
+fi
 
 sed -i 's/^exit 0/\/sbin\/ifup backplane1\nexit 0/' /mnt/etc/rc.local
 # that should do it
 # tell rootserver we're done to boot in local
 
-eval `cat /proc/cmdline`
-IPRANGE=`ipcalc -b ${IPV4ADDR} ${IPV4NETMASK} | awk '/Network/{print $2}'`
 echo "All done"
 
 # umount the stuff

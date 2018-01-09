@@ -1,6 +1,7 @@
 language-pack-en
 language-pack-en-base
 btrfs-tools
+xfsutils
 dmidecode
 dosfstools
 ethtool

@@ -17,10 +17,11 @@ if [ ! -d root ] ; then
 	mkdir root
 	${SUDO} debootstrap --arch=amd64 ${DISTRO} root
 	# add packages
-	${SUDO} cp init-chroot pkglist adaptdistro root
-	${SUDO} chroot root chmod +x adaptdistro
-	${SUDO} chroot root /adaptdistro
 fi
+
+${SUDO} cp init-chroot pkglist adaptdistro CtrlInstall root
+${SUDO} chroot root chmod +x adaptdistro
+${SUDO} chroot root /adaptdistro
 
 # build initramfs with running kernel modules
 
