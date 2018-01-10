@@ -167,7 +167,8 @@ function untarit(){
 	if [ "$OURFILESERVER" = "LOCAL" ]; then
 		# we're on our own, no network
 		mkdir -p /root/USB
-		mount -L GIGINSTALL /root/USB
+		mount -r -L GIGINSTALL /root/USB
+		[ $? -ne 0 ] && echo "OOPS: No USB and no fullroot, bailing" && exit 1
 		# and untar it
 		tar --numeric-owner -zxf /root/USB/${OSIMAGE} -C /mnt
 	else
@@ -176,14 +177,27 @@ function untarit(){
 		URL="${OURFILESERVER}/${OSIMAGE}"
 		# get the 'image' and pour it in the mountpoint
 		wget -qO - $URL | tar --numeric-owner -zxf - -C /mnt
+		[ $? -ne 0 ] && echo "OOPS: can't get \"$URL\"" && exit 1
 	fi
 }
 
-function findifaces(){
+function findXEifaces(){
     # we're looking for fast nics
     IFACES=""
     for i in /sys/class/net/* ; do
-        if ethtool ${i##*/}  2> /dev/null | grep -E '1000|10000|40000' &>/dev/null ; then
+        if ethtool ${i##*/}  2> /dev/null | grep -E '10000|40000' &>/dev/null ; then
+            IFACES=${IFACES}" ${i##*/}"
+        fi
+    done
+    echo ${IFACES:-eth0 eth1}
+
+}
+
+function findGEifaces(){
+    # we're looking for fast nics
+    IFACES=""
+    for i in /sys/class/net/* ; do
+        if ethtool ${i##*/}  2> /dev/null | grep -E '1000 ' &>/dev/null ; then
             IFACES=${IFACES}" ${i##*/}"
         fi
     done
