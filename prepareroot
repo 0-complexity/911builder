@@ -25,9 +25,10 @@ ${SUDO} chroot root /adaptdistro
 
 # build initramfs with running kernel modules
 
-${SUDO} mkinitramfs -d initramfs-tools/ -o ../binaries/ramfs ${KVER}
-${SUDO} cp /boot/vmlinuz-${KVER} ../binaries/vmlinuz
-${SUDO} chown $(whoami):$(whoami) ../binaries/*
+${SUDO} mkdir binaries
+${SUDO} mkinitramfs -d initramfs-tools/ -o binaries/ramfs ${KVER}
+${SUDO} cp /boot/vmlinuz-${KVER} binaries/vmlinuz
+${SUDO} chown $(whoami):$(whoami) binaries/*
 
 ${SUDO} bash mkiso
 
