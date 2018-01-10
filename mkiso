@@ -24,6 +24,8 @@ cat << EOF > binaries/isolinux/isolinux.cfg
 DEFAULT vesamenu.c32
 PROMPT 0
 
+MENU TITLE ^GreenITGlobe Controller installer -or- 911
+
 LABEL 911
   MENU LABEL ^start 911boot
   KERNEL /vmlinuz

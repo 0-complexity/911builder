@@ -10,9 +10,12 @@ mountroot()
 	[ "$quiet" != "y" ] && log_end_msg
 	[ "$quiet" != "y" ] && log_begin_msg "Connecting to network..."
 	. /scripts/functions
-	if [ ! "${ip}" = "no" ] ; then
+	if [ "${ip}" = "no" ] ; then
+		for i in /sys/class/net/en* ; do
+			touch /run/net-${i##*/}.conf
+		done
+	else
 		configure_networking
-		# got an IP here or else it crashes
 		. /run/net-*.conf
 	fi
 	[ "$quiet" != "y" ] && log_end_msg
