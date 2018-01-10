@@ -10,9 +10,11 @@ mountroot()
 	[ "$quiet" != "y" ] && log_end_msg
 	[ "$quiet" != "y" ] && log_begin_msg "Connecting to network..."
 	. /scripts/functions
-	configure_networking
-	# got an IP here or else it crashes
-	. /run/net-*.conf
+	if [ ! "${ip}" = "no" ] ; then
+		configure_networking
+		# got an IP here or else it crashes
+		. /run/net-*.conf
+	fi
 	[ "$quiet" != "y" ] && log_end_msg
 	# get root.sqfs if it isn't there
 	[ "$quiet" != "y" ] && log_begin_msg "getting root.sqfs if necessary..."
@@ -55,7 +57,7 @@ mountroot()
 	[ "$quiet" != "y" ] && log_end_msg
 	# copy modules
 	[ "$quiet" != "y" ] && log_begin_msg "sending modules to new_root"
-  	mkdir -p ${rootmnt}/lib/modules/`uname -r`
+	mkdir -p ${rootmnt}/lib/modules/`uname -r`
 	cp -ra /lib/modules/`uname -r` ${rootmnt}/lib/modules/
 	[ "$quiet" != "y" ] && log_end_msg
 	wait_for_udev 20
