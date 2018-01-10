@@ -54,7 +54,8 @@ mountroot()
 	[ "$quiet" != "y" ] && log_end_msg
 	# copy modules
 	[ "$quiet" != "y" ] && log_begin_msg "sending modules to new_root"
-	cp -ra /lib/modules/`uname -r` ${rootmnt}/lib/modules
+  mkdir -p ${rootmnt}/lib/modules/`uname -r`
+	cp -ra /lib/modules/`uname -r` ${rootmnt}/lib/modules/
 	[ "$quiet" != "y" ] && log_end_msg
 	wait_for_udev 20
 }
