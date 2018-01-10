@@ -5,7 +5,7 @@ retry_nr=0
 mountroot()
 {
 	eval `cat /proc/cmdline`
-	[ "x${rootfile}" = "x" ] && rootfile="root.sqfs"	
+	[ "x${rootfile}" = "x" ] && rootfile="root.sqfs"
 	[ "$quiet" != "y" ] && log_end_msg
 	[ "$quiet" != "y" ] && log_begin_msg "Connecting to network..."
 	. /scripts/functions
@@ -27,9 +27,9 @@ mountroot()
 	[ "$quiet" != "y" ] && log_begin_msg "mounting overlay loop..."
 	# define overlay
 	modprobe overlay
-	mkdir /ro /rw 
+	mkdir /ro /rw
 	mount -t tmpfs tmpfs /rw
-	mkdir /rw/upper /rw/work 
+	mkdir /rw/upper /rw/work
 	mount -o loop -t squashfs $rootfile /ro
 	mount -t overlay overlay -olowerdir=/ro,upperdir=/rw/upper,workdir=/rw/work ${rootmnt}
 	if [ $? -ne 0 ] ; then
@@ -53,9 +53,9 @@ mountroot()
 	fi
 	[ "$quiet" != "y" ] && log_end_msg
 	# copy modules
-	# [ "$quiet" != "y" ] && log_begin_msg "sending modules to new_root"
-	# cp -ra /lib/modules/`uname -r` ${rootmnt}/lib/modules
-	# [ "$quiet" != "y" ] && log_end_msg
+	[ "$quiet" != "y" ] && log_begin_msg "sending modules to new_root"
+	cp -ra /lib/modules/`uname -r` ${rootmnt}/lib/modules
+	[ "$quiet" != "y" ] && log_end_msg
 	wait_for_udev 20
 }
 
