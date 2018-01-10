@@ -1,0 +1,61 @@
+#!/bin/bash
+
+site=http:/10.101.107.254:8080
+image=ubuntu-16.04.3-20171130.tgz
+# basically, create a bootable iso
+#   - vmlinuz
+#   - ramfs
+#   - ubuntu image
+#   - Installer
+# the ISO needs to have Label
+
+# get the image
+wget ${site}/${image} -O binaries/${image}
+
+# ok, on with it
+mkdir binaries/isolinux
+cp /usr/lib/ISOLINUX/isolinux.bin binaries/isolinux/
+cp /usr/lib/syslinux/module/bios binaries/isolinux/
+
+
+# Isolinux boot config
+
+cat << EOF > binaries/isolinux/isolinux.cfg
+DEFAULT vesamenu.c32
+PROMPT 0
+
+LABEL 911
+  MENU LABEL ^start 911boot
+  KERNEL /vmlinuz
+  INITRD /ramfs
+LABEL ONE
+  MENU LABEL ^Install Controller 1 (one)
+  KERNEL /vmlinuz
+  INITRD /ramfs
+  APPEND install=ctrl-01 ip=no
+LABEL TWO
+  MENU LABEL ^Install Controller 2 (two)
+  KERNEL /vmlinuz
+  INITRD /ramfs
+  APPEND install=ctrl-02 ip=no
+LABEL THREE
+  MENU LABEL ^Install Controller 3 (three)
+  KERNEL /vmlinuz
+  INITRD /ramfs
+  APPEND install=ctrl-03 ip=no
+
+DISPLAY menu.txt
+TIMEOUT 300
+
+EOF
+
+# create the ISO
+cd binaries
+mkisofs -r -V GIGINSTALL -cache-inodes -J -l -b isolinux/isolinux.bin \
+	-c isolinux/boot.cat -no-emul-boot -boot-load-size 4 \
+	-boot-info-table -o ../GIGINSTALLER.iso
+cd ..
+
+
+
+

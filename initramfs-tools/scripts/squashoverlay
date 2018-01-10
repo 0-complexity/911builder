@@ -1,3 +1,4 @@
+#!/bin/sh
 # FIXME This needs error checking
 
 retry_nr=0

@@ -29,4 +29,6 @@ ${SUDO} mkinitramfs -d initramfs-tools/ -o ../binaries/ramfs ${KVER}
 ${SUDO} cp /boot/vmlinuz-${KVER} ../binaries/vmlinuz
 ${SUDO} chown $(whoami):$(whoami) ../binaries/*
 
+${SUDO} bash mkiso
+
 
