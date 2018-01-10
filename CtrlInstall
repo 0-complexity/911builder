@@ -2,21 +2,32 @@
 MOBO=`sudo dmidecode -t 2 | awk '/Product Name:/{print $3}'`
 source /run/net-*.conf
 
-# new variables to fill in :
-HOSTNAME=BE-LOC-4-ctrl-01
-DOMAIN=BE-LOC-4
-NETBASE=10.12
-NETLSB=1
-MASK=24
+# if called as ctrlinstall, source cmdline, source config
+eval $( cat /proc/cmdline )
 
-MGMT=0 ; MGMTVLAN=2311
-STOR=2 ; STORVLAN=2315
-UNTAG=1
+if [ "$install" = "" ] ; then
+	# new variables to fill in :
+	HOSTNAME=BE-LOC-4-ctrl-01
+	DOMAIN=BE-LOC-4
+	NETBASE=10.12
+	NETLSB=1
+	MASK=24
 
+	MGMT=0
+	MGMTVLAN=2311
 
-PUBIP=185.69.166.21
-PUBMASK=24
-PUBGW=185.69.166.1
+	UNTAG=1
+
+	STOR=2
+	STORVLAN=2315
+
+	PUBIP=185.69.166.21
+	PUBMASK=24
+	PUBGW=185.69.166.1
+	PUBVLAN=2312
+else
+	source ${install}
+fi
 
 MGMTIP=${NETBASE}.${MGMT}.${NETLSB}
 UNTAGIP=${NETBASE}.${UNTAG}.${NETLSB}
@@ -196,6 +207,30 @@ iface ${IFC} inet static
 EOF
 }
 
+function storbr(){
+    cat << EOF > /mnt/etc/network/interfaces.d/storage.conf
+### storage
+auto storage
+iface storage inet manual
+  pre-up ovs-vsctl --may-exist add-br storage
+  pre-up ovs-vsctl --may-exist add-br backplane1
+  pre-up ovs-vsctl --may-exist add-port backplane1 bkpln2stor tag=${STORVLAN} -- set Interface bkpln2stor type=patch options:peer=stor2bkpln
+  pre-up ovs-vsctl --may-exist add-port storage stor2bkpln -- set Interface stor2bkpln type=patch options:peer=bkpln2stor
+EOF
+}
+
+function pubiface(){
+    cat << EOF > /mnt/etc/network/interfaces.d/public.conf
+### public
+auto public
+iface public inet static
+  address ${PUBIP}/${PUBMASK}
+  gateway ${PUBGW}
+  pre-up ovs-vsctl --may-exist add-br backplane1
+  pre-up ovs-vsctl add-port backplane1 public tag=${PUBVLAN} -- set Interface public type=internal
+EOF
+}
+
 function prepsys(){
     echo $AYSHOSTNAME > /mnt/etc/hostname
     cat << EOF > /mnt/etc/network/interfaces
@@ -235,7 +270,8 @@ iface backplane1 inet static
   pre-up sysctl -w net.ipv6.conf.${BONDIFACES[0]}.disable_ipv6=1
 EOF
   mgmtiface ${MGMT[0]} ${MGMTIP}
-
+  pubiface
+  storbr
 fi
 
 # Also, to make glibc happy, add hostname to /etc/hosts
