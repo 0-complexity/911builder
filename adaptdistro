@@ -44,3 +44,42 @@ echo "gig:rooter" | chpasswd
 mkdir /root/tools > /dev/null 2>&1
 mv /init-chroot /CtrlInstall /root/tools
 chmod 755 /root/tools/init-chroot
+
+# Run Installer
+#
+cat << EOF > /etc/systemd/system/rc-local.service
+[Unit]
+Description=/etc/rc.local Compatibility
+ConditionPathExists=/etc/rc.local
+
+[Service]
+Type=forking
+ExecStart=/etc/rc.local start
+TimeoutSec=0
+StandardOutput=tty
+RemainAfterExit=yes
+SysVStartPriority=99
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl enable rc-local
+
+# /etc/rc.local starts /root/tools/CtrlInstall
+
+cat << EOF > /etc/rc.local
+#!/bin/bash
+eval $( cat /proc/cmdline )
+if [ "${install}" = "" ] ; then
+	# do nothing
+	:
+else
+	cd /root/tools
+	./CtrlInstall
+fi
+EOF
+
+# executable
+
+chmod 755 /etc/rc.local
