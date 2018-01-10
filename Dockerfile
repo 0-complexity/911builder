@@ -17,7 +17,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y install genisoimage isolinux \
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install squashfs-tools ipmitool
 
 # get myself (911builder) in the dock
-ADD . /911builder/
+# ADD . /911builder/
 
 CMD bash -c 'cd /911builder ; ./prepareroot'
 
