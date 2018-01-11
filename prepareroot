@@ -1,6 +1,5 @@
 #!/bin/bash
-# create workdir
-
+trap "exit" INT
 set -x
 
 KVER=4.13.0-19-generic
@@ -15,7 +14,7 @@ if [ ! -d root ] ; then
 	# if the dir exists, we assume that part is already done
 	# Otherwise:
 	mkdir root
-	${SUDO} debootstrap --arch=amd64 ${DISTRO} root
+	${SUDO} debootstrap --arch=amd64 ${DISTRO} root  http://nl.archive.ubuntu.com/ubuntu/
 	# add packages
 fi
 

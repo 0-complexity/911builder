@@ -14,8 +14,9 @@ wget ${site}/${image} -O binaries/${image}
 
 # ok, on with it
 mkdir binaries/isolinux
-cp /usr/lib/ISOLINUX/isolinux.bin binaries/isolinux/
+cp /usr/lib/ISOLINUX/* binaries/isolinux/
 cp /usr/lib/syslinux/modules/bios/* binaries/isolinux/
+
 
 
 # Isolinux boot config

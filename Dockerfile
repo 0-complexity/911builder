@@ -2,7 +2,10 @@ FROM ubuntu:latest
 
 # necessary tools
 RUN apt-get update ; \
-    DEBIAN_FRONTEND=noninteractive apt-get -y install build-essential debootstrap isolinux git
+    DEBIAN_FRONTEND=noninteractive apt-get -y install build-essential debootstrap git
+
+# yea, I need some tools too
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y install vim-nox
 
 # get kernel in there
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install linux-headers-4.13.0-19-generic \
