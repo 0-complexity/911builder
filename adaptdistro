@@ -54,7 +54,8 @@ ConditionPathExists=/etc/rc.local
 
 [Service]
 Type=forking
-ExecStart=/etc/rc.local start
+ExecStart=/etc/rc.local
+Standard{Output,Error}=journal+console
 TimeoutSec=0
 StandardOutput=tty
 RemainAfterExit=yes
@@ -70,16 +71,17 @@ systemctl enable rc-local
 
 cat << EOF > /etc/rc.local
 #!/bin/bash
-eval $( cat /proc/cmdline )
-if [ "${install}" = "" ] ; then
+eval \$( cat /proc/cmdline )
+if [ "\${install}" = "" ] ; then
 	# do nothing
 	:
 else
 	cd /root/tools
-	./CtrlInstall
+	./CtrlInstall > Installog
 fi
 EOF
 
 # executable
 
 chmod 755 /etc/rc.local
+

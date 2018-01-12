@@ -2,58 +2,42 @@
 MOBO=`sudo dmidecode -t 2 | awk '/Product Name:/{print $3}'`
 source /run/net-*.conf
 
+# PXE created environment
+eval $( cat /proc/cmdline ) &> /dev/null
+OURFILESERVER=${fullroot:-LOCAL}
+
 # if called as ctrlinstall, source cmdline, source config
-eval $( cat /proc/cmdline )
-
-if [ "$install" = "" ] ; then
-	# new variables to fill in :
-	HOSTNAME=BE-LOC-4-ctrl-01
-	DOMAIN=BE-LOC-4
-	NETBASE=10.12
-	NETLSB=1
-	MASK=24
-
-	MGMT=0
-	MGMTVLAN=2311
-
-	UNTAG=1
-
-	STOR=2
-	STORVLAN=2315
-
-	PUBIP=185.69.166.21
-	PUBMASK=24
-	PUBGW=185.69.166.1
-	PUBVLAN=2312
-else
-	source ${install}
+if [ ! "$install" = "" ] ; then
+	if [ "${OURFILESERVER}" = "LOCAL" ] ; then
+		mkdir -p /root/USB
+		mount -r -L GIGINSTALL /root/USB
+		source /root/USB/etc/${install}.conf
+	fi
 fi
 
-MGMTIP=${NETBASE}.${MGMT}.${NETLSB}
-UNTAGIP=${NETBASE}.${UNTAG}.${NETLSB}
-STORIP=${NETBASE}.${STOR}.${NETLSB}
+AYSHOSTNAME=${HOSTNAME}.${DNSDOMAIN}
 
-# OSIMAGE="ubuntu-16.04.3-20171028.tgz"
+NETLSB=${MGMTIP##*.}
 OSIMAGE="ubuntu-16.04.3-20171130.tgz"
 
 case "$MOBO" in
-   G1SCN-B) # Gooxi Controller node
-	BONDIFACES=('enp4s0')
-	MGMT=('enp3s0')
-	DISKS=( sda sdb )
-	;;
-   *)
-	# some reasonable defaults ;-)
-	BONDIFACES=( $DEVICE )
-	MGMT=('ovs' '2311')
-	DISKS=( sda sdb )
-	;;
+	G1SCN-B) # Gooxi Controller node
+		BONDIFACES=('enp4s0')
+		MGMT=('enp3s0')
+		DISKS=( sda sdb )
+		;;
+	*)
+		# some reasonable defaults ;-)
+		BONDIFACES=( $DEVICE )
+		MGMT=('ovs' '2311')
+		DISKS=( sda sdb )
+		;;
 esac
 
 function zappit(){
     ## zappitall
     ## first, zero out evt fs headers from partitions
-    parts=`ls /dev/disk/by-id/ | awk '/part/&&!/wwn/{print}'`
+    parts=`ls /dev/disk/by-id/ | awk '/part/&&!/wwn/&&!/usb/{print}'`
     for i in $parts ; do
         dd if=/dev/zero of=/dev/disk/by-id/${i} bs=1M count=100 &
     done
@@ -61,7 +45,7 @@ function zappit(){
     sync
 
     # same for md devices that could contain an fs
-    parts=`ls /dev/disk/by-id/ | awk '/part/&&!/wwn/{print}'`
+    parts=`ls /dev/disk/by-id/ | awk '/part/&&!/wwn/&&!/usb/{print}'`
     mds=`mdadm --detail --scan | awk '/ARRAY/{print $2}'`
     for i in $mds ; do
         dd if=/dev/zero of=$i bs=1M count=100 &
@@ -90,7 +74,7 @@ function zappit(){
 	done
     ##
     mdadm --stop --scan
-    if ! [ -z "`ls /dev/disk/by-id/ | grep part`" ] ; then
+    if ! [ -z "`ls /dev/disk/by-id/ | grep part | grep -v usb`" ] ; then
         echo not everything is cleared
         exit 1
     fi
@@ -168,9 +152,9 @@ function untarit(){
 		# we're on our own, no network
 		mkdir -p /root/USB
 		mount -r -L GIGINSTALL /root/USB
-		[ $? -ne 0 ] && echo "OOPS: No USB and no fullroot, bailing" && exit 1
 		# and untar it
 		tar --numeric-owner -zxf /root/USB/${OSIMAGE} -C /mnt
+		[ $? -ne 0 ] && echo "OOPS: No USB and no fullroot, bailing" && exit 1
 	else
 		OURFILESERVER="${OURFILESERVER:-$fullroot}"
 		# INSTALL
@@ -367,11 +351,6 @@ EOF
 }
 
 
-# PXE created environment
-eval $( cat /proc/cmdline ) &> /dev/null
-AYSHOSTNAME=${HOSTNAME}.${DNSDOMAIN}
-OURFILESERVER=${fullroot:-LOCAL}
-
 # to use findifaces, you need to create an empty BONDIFACES array
 if [ ${#BONDIFACES[@]} -eq 0 ] ; then
 	BONDIFACES=( $(findifaces) )
@@ -409,3 +388,5 @@ umount /mnt/boot /mnt
 # that should do it
 
 echo "All done"
+
+( date; echo -e '\n\nFinished installing Ctrl-02.\nPlease reboot without usb stick!!' ) > /dev/console

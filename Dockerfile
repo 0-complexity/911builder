@@ -15,7 +15,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y install linux-headers-4.13.0-19-ge
 
 # get some cdrom tools in place
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install genisoimage isolinux \
-    syslinux
+    syslinux syslinux-utils
 # some bins that copied into the initramfs
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install squashfs-tools ipmitool
 
