@@ -67,6 +67,13 @@ EOF
 
 systemctl enable rc-local
 
+# Don't clear console
+mkdir /etc/systemd/system/getty@.service.d
+cat >/etc/systemd/system/getty@.service.d/noclear.conf <<EOF
+[Service]
+TTYVTDisallocate=no
+EOF
+
 # /etc/rc.local starts /root/tools/CtrlInstall
 
 cat << EOF > /etc/rc.local

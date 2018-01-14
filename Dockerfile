@@ -4,7 +4,7 @@ FROM ubuntu:latest
 RUN apt-get update ; \
     DEBIAN_FRONTEND=noninteractive apt-get -y install build-essential debootstrap git
 
-# yea, I need some tools too
+# yea, I need some tools too, whe I do ./runenv
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install vim-nox
 
 # get kernel in there
