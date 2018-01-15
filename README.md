@@ -17,7 +17,7 @@
   1. Delete the `./root` dir if you start from scratch
   1. Basically: just run `./prepareroot`
 
-That'll create a `ramfs` file. 
+That'll create a `ramfs` file.
 
 ### Showtime!
 
@@ -33,7 +33,7 @@ git clone git@github.com/PurePeople/911builder.git
 cd 911builder
 # remove ./root when it's your first time
 # that way, a debootstrap populates a new tree
-rm -rf ./root
+rm -rf ./root ./binaries/* GIGINSTALLER.iso
 
 # run it
 ./prepareroot
@@ -43,13 +43,14 @@ rm -rf ./root
 # when finished , you'll find a file "ramfs" -> that is the initrd
 
 ls binaries
+ls -lh GIGINSTALLER.iso
 
 ```
 
 That'll create a `ramfs` file. Together with the __running__ kernel of your host,
-you can boot it as 
+you can boot it as
 
-  - snippet of vm's xml for booting it  
+  - snippet of vm's xml for booting it
 
 ```xml
   <os>
@@ -66,7 +67,13 @@ or configure pxe to use these files for `linux` and `initrd`
 
 or whatevvah
 
-## NOW: 
+Otherwise, you can boot from CDROM on a VM with GIGINSTALLER.iso,
+
+Or `dd if=GIGINSTALLER of=${yourUSBdrive} bs=1M conv=fdatasync oflag=dsync`
+
+and boot it from USB
+
+## NOW:
 
 ### Build it with Docker
 
@@ -78,12 +85,18 @@ Simple:
 # create your work image
 docker build -t 911builder:latest .
 
-# and run the builder
+That builds a woking environment, where you can:
+
 docker run --privileged --rm -v $(pwd)/binaries:/binaries 911builder:latest
+
+# in that environment you can `cd /911builder ; ./prepareroot`
+
+# Or re-enter the env with `./runenv.sh`
 
 ```
 
 Then, in `./binaries` you'll find `vmlinuz` and `ramfs` that you can use for pxeboot
+and also `./GIGINSTALLER.iso` to boot a testvm from, or write it to an usb
 
 
 ### Or, Of course,
@@ -93,3 +106,7 @@ you can just build it with
 ```sh
 ./buildfromscratch
 ```
+
+that just does all of the above ;-)
+
+
