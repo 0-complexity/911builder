@@ -395,4 +395,5 @@ echo "All done"
 
 while : ; do
 	( date; echo -e 'Finished installing Ctrl-02.\nPlease reboot without usb stick!!\n\n' ) > /dev/console
+	sleep 5
 done
