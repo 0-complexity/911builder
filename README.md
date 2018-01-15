@@ -69,7 +69,7 @@ or whatevvah
 
 Otherwise, you can boot from CDROM on a VM with GIGINSTALLER.iso,
 
-Or `dd if=GIGINSTALLER of=${yourUSBdrive} bs=1M conv=fdatasync oflag=dsync`
+Or `dd if=GIGINSTALLER.iso of=${yourUSBdrive} bs=1M conv=fdatasync oflag=dsync`
 
 and boot it from USB
 
