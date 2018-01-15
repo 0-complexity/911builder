@@ -9,9 +9,13 @@ OURFILESERVER=${fullroot:-LOCAL}
 # if called as ctrlinstall, source cmdline, source config
 if [ ! "$install" = "" ] ; then
 	if [ "${OURFILESERVER}" = "LOCAL" ] ; then
-		mkdir -p /root/USB
-		mount -r -L GIGINSTALL /root/USB
-		source /root/USB/etc/${install}.conf
+		if [ -d "/root/etc" ] ; then
+			source /root/et/${install}.conf
+		else
+			mkdir -p /root/USB
+			mount -r -L GIGINSTALL /root/USB
+			source /root/USB/etc/${install}.conf
+		fi
 	fi
 fi
 
