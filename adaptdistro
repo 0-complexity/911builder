@@ -26,12 +26,11 @@ systemctl enable systemd-networkd
 systemctl disable networking
 
 # give it a sensible hostname
-echo "911" > /etc/hostname
-echo "127.0.0.1 911" >> /etc/hosts
-echo "::1 911" >> /etc/hosts
+echo "boot911" > /etc/hostname
+echo "127.0.0.1 boot911" >> /etc/hosts
+echo "::1 boot911" >> /etc/hosts
 
 # get resolving working
-echo "nameserver 8.8.8.8" >> /etc/resolvconf/resolv.conf.d/head
 systemctl enable systemd-resolved
 
 apt-get clean

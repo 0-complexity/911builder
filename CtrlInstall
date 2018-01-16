@@ -10,7 +10,7 @@ OURFILESERVER=${fullroot:-LOCAL}
 if [ ! "$install" = "" ] ; then
 	if [ "${OURFILESERVER}" = "LOCAL" ] ; then
 		if [ -d "/root/etc" ] ; then
-			source /root/et/${install}.conf
+			source /root/etc/${install}.conf
 		else
 			mkdir -p /root/USB
 			mount -r -L GIGINSTALL /root/USB
