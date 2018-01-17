@@ -206,6 +206,8 @@ iface ${IFC} inet static
   ${GATEWAY}
   pre-up ovs-vsctl --may-exist add-br mgmt
   pre-up ovs-vsctl --may-exist add-port mgmt ${IFC}
+iface ${IFC} inet static
+  address ${IPMIIP}/24
 EOF
 }
 
