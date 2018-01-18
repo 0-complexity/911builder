@@ -1,4 +1,5 @@
 #!/bin/bash
+# NINSTALLER=${NINSTALLER:-yes}
 
 # Install standard packages
 sed -i 's/main/main universe/' /etc/apt/sources.list
@@ -10,6 +11,25 @@ export DEBIAN_FRONTEND=noninteractive
 while read line ; do
     apt-get -q -y install $line
 done <<< $(cat pkglist)
+
+# geert's ninstaller
+if [ "$NINSTALLER" = "yes" ] ; then
+	# Python-pip... yeah fsck
+	apt-get -q -y install python3-pip
+	# now we're twice as big :-(
+	pushd /root
+	# We want the world in here
+	rm -rf openvcloud_installer
+	git clone https://github.com/0-complexity/openvcloud_installer.git
+	[ $? -ne 0 ] && echo "Couldn't clone ninstaller repo" && exit 1
+	mkdir ninstaller
+	cp openvcloud_installer/scripts/install/* ninstaller/
+	# get pip requirements
+	cd ninstaller
+	pip3 install --no-cache-dir -r requirements.txt
+	rm -rf openvcloud_installer
+	popd
+fi
 
 # 911 booted devices are accessible as root over ssh
 sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
@@ -43,6 +63,8 @@ echo "gig:rooter" | chpasswd
 mkdir /root/tools > /dev/null 2>&1
 mv /Install /init-chroot /CtrlInstall /root/tools
 chmod 755 /root/tools/init-chroot
+chmod 755 /root/tools/Install
+
 
 # Run Installer
 #

@@ -22,6 +22,7 @@ ${SUDO} cp Install init-chroot pkglist adaptdistro CtrlInstall root
 ${SUDO} chroot root chmod +x adaptdistro
 ${SUDO} chroot root /adaptdistro
 
+
 # build initramfs with running kernel modules
 
 ${SUDO} mkdir binaries

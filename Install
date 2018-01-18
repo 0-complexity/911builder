@@ -30,6 +30,14 @@ case "$MOBO" in
 	DISK2=${disks[1]}
 	echo "######## Installing on $DISK1 and $DISK2"
 	;;
+   C11HGSA0) # Huawei Russia
+	BONDIFACES=('enp129s0f0' 'enp129s0f1')
+    STORIFACE="storage"
+	MGMT=('enp2s0f0')
+	DISK1=sda
+	DISK2=sdb
+	echo "######## Installing on $DISK1 and $DISK2"
+	;;
    X10DRW-i) # SuperMicro UberServer (be-g8-1)
 	BONDIFACES=() # filled in by findifaces
 	MGMT=('eno1')
@@ -66,6 +74,8 @@ case "$MOBO" in
 	# some reasonable defaults ;-)
 	BONDIFACES=( $DEVICE )
 	MGMT=('ovs' '2311')
+	DISK1=sda
+	DISK2=sdb
 	;;
 esac
 
@@ -579,9 +589,9 @@ LSBIP=$(echo $IPV4ADDR | awk -F . '{printf "%02d",$4}')
 BKPLNIP=`echo $IPV4ADDR | awk -F . '{print $1"."$2"."$3-1"."$4}'`
 STORIP=`echo $IPV4ADDR | awk -F . '{print $1"."$2"."$3+1"."$4}'`
 HOSTNUM=`echo $IPV4ADDR | awk -F . '{printf "%02d",$4 - 100}'`
+HOSTNAME=${HOSTNAME:-CHANGEME}
+DNSDOMAIN=${DNSDOMAIN:-local}
 AYSHOSTNAME=${HOSTNAME,,}.${DNSDOMAIN,,}
-OURFILESERVER=$fullroot
-
 # to use findifaces, you need to create an empty BONDIFACES array
 if [ ${#BONDIFACES[@]} -eq 0 ] ; then
 	BONDIFACES=( $(findifaces) )

@@ -23,3 +23,5 @@ iperf3
 resolvconf
 bash-completion
 ipcalc
+git
+pciutils
