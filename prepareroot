@@ -18,7 +18,7 @@ if [ ! -d root ] ; then
 	# add packages
 fi
 
-${SUDO} cp init-chroot pkglist adaptdistro CtrlInstall root
+${SUDO} cp Install init-chroot pkglist adaptdistro CtrlInstall root
 ${SUDO} chroot root chmod +x adaptdistro
 ${SUDO} chroot root /adaptdistro
 

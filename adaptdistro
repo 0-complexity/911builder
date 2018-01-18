@@ -41,7 +41,7 @@ echo "root:rooter" | chpasswd
 echo "gig:rooter" | chpasswd
 
 mkdir /root/tools > /dev/null 2>&1
-mv /init-chroot /CtrlInstall /root/tools
+mv /Install /init-chroot /CtrlInstall /root/tools
 chmod 755 /root/tools/init-chroot
 
 # Run Installer
