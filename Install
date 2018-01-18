@@ -96,7 +96,7 @@ function zappit(){
     sync
 
     # same for md devices that could contain an fs
-    parts=`ls /dev/disk/by-id/ | awk '/part/&&!/wwn/{print}'`
+    parts=`ls /dev/disk/by-id/ | awk '/part/&&!/wwn/{print}'| grep -iv usb`
     mds=`mdadm --detail --scan | awk '/ARRAY/{print $2}'`
     for i in $mds ; do
         dd if=/dev/zero of=$i bs=1M count=100 &
@@ -113,14 +113,14 @@ function zappit(){
     done
     # we should need :apt-get install gdisk but it's on the rescue of OVH
     # Now we can drop all partition tables
-    disks=`ls /dev/disk/by-id/ | awk  '/scsi|ata/{gsub(/\-part.*/,"");print}'|uniq`
+    disks=`ls /dev/disk/by-id/ | grep -iv usb | awk  '/scsi|ata/{gsub(/\-part.*/,"");print}'|uniq`
     for i in $disks ; do
         # destruct, destroy, obliterate
         SIZE=`blockdev --getsz /dev/disk/by-id/${i}`
         dd if=/dev/zero seek=$(($SIZE - 1024)) bs=512 count=1024 of=/dev/disk/by-id/${i}
         dd if=/dev/zero of=/dev/disk/by-id/${i} bs=1M count=10 && sync
         echo -e 'x\nz\ny\ny\n' | gdisk /dev/disk/by-id/${i}
-	udevadm settle
+		udevadm settle
         partprobe /dev/disk/by-id/${i}
     done
     for i in `ls /dev/nvme?n?` ; do
@@ -128,13 +128,13 @@ function zappit(){
         dd if=/dev/zero seek=$(($SIZE - 1024)) bs=512 count=1024 of=$i
         dd if=/dev/zero of=${i} bs=1M count=10 && sync
         echo -e 'x\nz\ny\ny\n' | gdisk ${i}
-	udevadm settle
+		udevadm settle
         partprobe ${i}
     done
 
     ##
     mdadm --stop --scan
-    if ! [ -z "`ls /dev/disk/by-id/ | grep part`" ] ; then
+    if ! [ -z "`ls /dev/disk/by-id/ | grep part| grep -iv usb`" ] ; then
         echo not everything is cleared
         exit 1
     fi
