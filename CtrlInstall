@@ -14,7 +14,7 @@ if [ ! "$install" = "" ] ; then
 		else
 			mkdir -p /root/USB
 			mount -r -L GIGINSTALL /root/USB
-			source /root/USB/etc/${install}.conf
+			source /root/USB/etc/${install}
 		fi
 	fi
 fi
@@ -28,6 +28,11 @@ case "$MOBO" in
 	G1SCN-B) # Gooxi Controller node
 		BONDIFACES=('enp4s0')
 		MGMT=('enp3s0')
+		DISKS=( sda sdb )
+		;;
+	VirtualBox) # Playground for geert
+		BONDIFACES=('enp0s3')
+		MGMT=('enp0s8')
 		DISKS=( sda sdb )
 		;;
 	*)
@@ -206,6 +211,8 @@ iface ${IFC} inet static
   ${GATEWAY}
   pre-up ovs-vsctl --may-exist add-br mgmt
   pre-up ovs-vsctl --may-exist add-port mgmt ${IFC}
+iface ${IFC} inet static
+  address ${IPMIIP}/24
 EOF
 }
 
