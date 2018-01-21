@@ -3,7 +3,10 @@ set -e
 
 PREREQS="cryptsetup"
 case $1 in
-	prereqs) echo "${PREREQS}"; exit 0;;
+	prereqs)
+		echo "${PREREQS}"
+		exit 0
+		;;
 esac
 
 . /usr/share/initramfs-tools/hook-functions
@@ -24,7 +27,5 @@ manual_add_modules aesni_intel || true
 
 # make squashfs from root
 mksquashfs root ${DESTDIR}/root.sqfs -progress -comp lz4
-
-
 
 # vi: ts=4 noexpandtab
