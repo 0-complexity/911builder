@@ -315,9 +315,10 @@ update-initramfs -c -k all
 rm -f /boot/grub/grub.cfg
 grub-install --force /dev/${DISKS[0]}
 grub-install --force /dev/${DISKS[1]} &> /dev/null
-sed -e '/Waiting for/ {n; s/sleep.*/sleep 5/g}' -e '/up to/{n ; s/sleep.*/sleep 5/g}' /etc/init/failsafe.conf > /tmp/fs.conf
-mv -f /tmp/fs.conf /etc/init/failsafe.conf
+
 echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
+
+echo "gig:${GIGPWD}" | chpasswd
 
 update-grub
 rm -f rungrub
@@ -387,6 +388,20 @@ prepsys
 createswaps
 mkfstab
 installgrub
+
+if [ ! "$install" = "" ] ; then
+	if [ "${OURFILESERVER}" = "LOCAL" ] ; then
+		if [ -d "/root/etc" ] ; then
+			[ -f "/root/etc/id_rsa.pub" ] && \
+				cat /root/etc/id_rsa.pub >> /mnt/root/.ssh/authorized_keys
+		else
+			mkdir -p /root/USB
+			mount -r -L GIGINSTALL /root/USB
+			[ -f "/root/USB/etc/id_rsa.pub" ] && \
+				cat /root/USB/etc/id_rsa.pub >> /mnt/root/.ssh/authorized_keys
+		fi
+	fi
+fi
 
 # get pubkey autorized_keys
 if [ ! "${fullroot}" = "" ]; then
