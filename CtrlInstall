@@ -1,15 +1,15 @@
 #!/bin/bash
-MOBO=`sudo dmidecode -t 2 | awk '/Product Name:/{print $3}'`
+MOBO=$(sudo dmidecode -t 2 | awk '/Product Name:/{print $3}')
 source /run/net-*.conf
 
 # PXE created environment
-eval $( cat /proc/cmdline ) &> /dev/null
+eval $(cat /proc/cmdline) &>/dev/null
 OURFILESERVER=${fullroot:-LOCAL}
 
 # if called as ctrlinstall, source cmdline, source config
-if [ ! "$install" = "" ] ; then
-	if [ "${OURFILESERVER}" = "LOCAL" ] ; then
-		if [ -d "/root/etc" ] ; then
+if [ ! "$install" = "" ]; then
+	if [ "${OURFILESERVER}" = "LOCAL" ]; then
+		if [ -d "/root/etc" ]; then
 			source /root/etc/${install}.conf
 		else
 			mkdir -p /root/USB
@@ -28,77 +28,77 @@ case "$MOBO" in
 	G1SCN-B) # Gooxi Controller node
 		BONDIFACES=('enp4s0')
 		MGMT=('enp3s0')
-		DISKS=( sda sdb )
+		DISKS=(sda sdb)
 		;;
 	VirtualBox) # Playground for geert
 		BONDIFACES=('enp0s3')
 		MGMT=('enp0s8')
-		DISKS=( sda sdb )
+		DISKS=(sda sdb)
 		;;
 	*)
 		# some reasonable defaults ;-)
-		BONDIFACES=( $DEVICE )
+		BONDIFACES=($DEVICE)
 		MGMT=('ovs' '2311')
-		DISKS=( sda sdb )
+		DISKS=(sda sdb)
 		;;
 esac
 
-function zappit(){
-    ## zappitall
-    ## first, zero out evt fs headers from partitions
-    parts=`ls /dev/disk/by-id/ | awk '/part/&&!/wwn/&&!/usb/{print}'`
-    for i in $parts ; do
-        dd if=/dev/zero of=/dev/disk/by-id/${i} bs=1M count=100 &
-    done
-    wait
-    sync
-
-    # same for md devices that could contain an fs
-    parts=`ls /dev/disk/by-id/ | awk '/part/&&!/wwn/&&!/usb/{print}'`
-    mds=`mdadm --detail --scan | awk '/ARRAY/{print $2}'`
-    for i in $mds ; do
-        dd if=/dev/zero of=$i bs=1M count=100 &
-    done
-    wait
-    sync
-
-    # now stop evt raids
-    mdadm --stop --scan
-    # erase evt superblocks from md partitions
-	echo $parts
-    for i in $parts ; do
-        mdadm --zero-superblock --force /dev/disk/by-id/${i}
-    done
-    # we should need :apt-get install gdisk but it's on the rescue of OVH
-    # Now we can drop all partition tables
-    disks=`ls /dev/disk/by-id/ | awk  '/scsi|ata/{gsub(/\-part.*/,"");print}'|uniq`
-    for i in $disks ; do
-        # destruct, destroy, obliterate
-        SIZE=`blockdev --getsz /dev/disk/by-id/${i}`
-        dd if=/dev/zero seek=$(($SIZE - 1024)) bs=512 count=1024 of=/dev/disk/by-id/${i}
-        dd if=/dev/zero of=/dev/disk/by-id/${i} bs=1M count=10 && sync
-        echo -e 'x\nz\ny\ny\n' | gdisk /dev/disk/by-id/${i}
-		udevadm settle
-        partprobe /dev/disk/by-id/${i}
+function zappit() {
+	## zappitall
+	## first, zero out evt fs headers from partitions
+	parts=$(ls /dev/disk/by-id/ | awk '/part/&&!/wwn/&&!/usb/{print}')
+	for i in $parts; do
+		dd if=/dev/zero of=/dev/disk/by-id/${i} bs=1M count=100 &
 	done
-    ##
-    mdadm --stop --scan
-    if ! [ -z "`ls /dev/disk/by-id/ | grep part | grep -v usb`" ] ; then
-        echo not everything is cleared
-        exit 1
-    fi
+	wait
+	sync
+
+	# same for md devices that could contain an fs
+	parts=$(ls /dev/disk/by-id/ | awk '/part/&&!/wwn/&&!/usb/{print}')
+	mds=$(mdadm --detail --scan | awk '/ARRAY/{print $2}')
+	for i in $mds; do
+		dd if=/dev/zero of=$i bs=1M count=100 &
+	done
+	wait
+	sync
+
+	# now stop evt raids
+	mdadm --stop --scan
+	# erase evt superblocks from md partitions
+	echo $parts
+	for i in $parts; do
+		mdadm --zero-superblock --force /dev/disk/by-id/${i}
+	done
+	# we should need :apt-get install gdisk but it's on the rescue of OVH
+	# Now we can drop all partition tables
+	disks=$(ls /dev/disk/by-id/ | awk '/scsi|ata/{gsub(/\-part.*/,"");print}' | uniq)
+	for i in $disks; do
+		# destruct, destroy, obliterate
+		SIZE=$(blockdev --getsz /dev/disk/by-id/${i})
+		dd if=/dev/zero seek=$(($SIZE - 1024)) bs=512 count=1024 of=/dev/disk/by-id/${i}
+		dd if=/dev/zero of=/dev/disk/by-id/${i} bs=1M count=10 && sync
+		echo -e 'x\nz\ny\ny\n' | gdisk /dev/disk/by-id/${i}
+		udevadm settle
+		partprobe /dev/disk/by-id/${i}
+	done
+	##
+	mdadm --stop --scan
+	if ! [ -z "$(ls /dev/disk/by-id/ | grep part | grep -v usb)" ]; then
+		echo not everything is cleared
+		exit 1
+	fi
 }
 
-function genpartbios(){
-    mdadm --stop --scan
-	if [ ${#DISKSS[@]} -eq 1 ] ; then
+function genpartbios() {
+	mdadm --stop --scan
+	if [ ${#DISKSS[@]} -eq 1 ]; then
 		parted /dev/${DISKS[0]} -s mklabel gpt \
 			mkpart bios ext2 1 8M \
 			mkpart swap linux-swap 8M 8G \
 			mkpart boot ext2 8G 10G \
 			mkpart root ext2 10G 100% \
 			set 1 bios_grub on set 2 raid on set 4 raid on
-    else
+	else
 		parted /dev/${DISKS[0]} -s mklabel gpt \
 			mkpart bios ext2 1 8M \
 			mkpart boot ext2 8G 10G \
@@ -113,50 +113,50 @@ function genpartbios(){
 			mkpart root ext2 10G 100% \
 			set 1 bios_grub on set 2 raid on set 4 raid on
 	fi
-    # need to sleep here a bit for udev to settle
+	# need to sleep here a bit for udev to settle
 	udevadm settle
-    sleep 2
-    mdadm --stop --scan
+	sleep 2
+	mdadm --stop --scan
 }
 
-function prepmounts(){
-    # prepare /boot
-    yes | mdadm --create /dev/md0 -l1 -n2 /dev/${DISKS[0]}2 /dev/${DISKS[1]}2 --force
-    sysctl -w dev.raid.speed_limit_max=10
-    sysctl -w dev.raid.speed_limit_min=10
-    mkfs.ext4 -L BOOT /dev/md0
+function prepmounts() {
+	# prepare /boot
+	yes | mdadm --create /dev/md0 -l1 -n2 /dev/${DISKS[0]}2 /dev/${DISKS[1]}2 --force
+	sysctl -w dev.raid.speed_limit_max=10
+	sysctl -w dev.raid.speed_limit_min=10
+	mkfs.ext4 -L BOOT /dev/md0
 
-    # prepare root partition
-    yes | mdadm --create /dev/md1 -l1 -n2 /dev/${DISKS[0]}4 /dev/${DISKS[1]}4 --force
+	# prepare root partition
+	yes | mdadm --create /dev/md1 -l1 -n2 /dev/${DISKS[0]}4 /dev/${DISKS[1]}4 --force
 	mkfs.ext4 /dev/md1 -E lazy_itable_init=1
 
-    # mount it
+	# mount it
 	mount /dev/md1 /mnt
 
-    mkdir /mnt/boot
-    mount /dev/md0 /mnt/boot
+	mkdir /mnt/boot
+	mount /dev/md0 /mnt/boot
 }
 
-function prepmountssingle(){
-    # prepare /boot
-    yes | mdadm --create /dev/md0 -l1 -n2 /dev/${DISKS[0]}2 missing --force
-    sysctl -w dev.raid.speed_limit_max=10
-    sysctl -w dev.raid.speed_limit_min=10
-    mkfs.ext4 -L BOOT /dev/md0
+function prepmountssingle() {
+	# prepare /boot
+	yes | mdadm --create /dev/md0 -l1 -n2 /dev/${DISKS[0]}2 missing --force
+	sysctl -w dev.raid.speed_limit_max=10
+	sysctl -w dev.raid.speed_limit_min=10
+	mkfs.ext4 -L BOOT /dev/md0
 
-    # prepare root partition
-    yes | mdadm --create /dev/md1 -l1 -n2 /dev/${DISKS[0]}4 missing --force
+	# prepare root partition
+	yes | mdadm --create /dev/md1 -l1 -n2 /dev/${DISKS[0]}4 missing --force
 	mkfs.ext4 /dev/md1 -E lazy_itable_init=1
 
-    # mount it
+	# mount it
 	mount /dev/md1 /mnt
 
-    mkdir /mnt/boot
-    mount /dev/md0 /mnt/boot
+	mkdir /mnt/boot
+	mount /dev/md0 /mnt/boot
 }
 
 # TODO errcheck here
-function untarit(){
+function untarit() {
 	if [ "$OURFILESERVER" = "LOCAL" ]; then
 		# we're on our own, no network
 		mkdir -p /root/USB
@@ -174,36 +174,37 @@ function untarit(){
 	fi
 }
 
-function findXEifaces(){
-    # we're looking for fast nics
-    IFACES=""
-    for i in /sys/class/net/* ; do
-        if ethtool ${i##*/}  2> /dev/null | grep -E '10000|40000' &>/dev/null ; then
-            IFACES=${IFACES}" ${i##*/}"
-        fi
-    done
-    echo ${IFACES:-eth0 eth1}
+function findXEifaces() {
+	# we're looking for fast nics
+	IFACES=""
+	for i in /sys/class/net/*; do
+		if ethtool ${i##*/} 2>/dev/null | grep -E '10000|40000' &>/dev/null; then
+			IFACES=${IFACES}" ${i##*/}"
+		fi
+	done
+	echo ${IFACES:-eth0 eth1}
 
 }
 
-function findGEifaces(){
-    # we're looking for fast nics
-    IFACES=""
-    for i in /sys/class/net/* ; do
-        if ethtool ${i##*/}  2> /dev/null | grep -E '1000 ' &>/dev/null ; then
-            IFACES=${IFACES}" ${i##*/}"
-        fi
-    done
-    echo ${IFACES:-eth0 eth1}
+function findGEifaces() {
+	# we're looking for fast nics
+	IFACES=""
+	for i in /sys/class/net/*; do
+		if ethtool ${i##*/} 2>/dev/null | grep -E '1000 ' &>/dev/null; then
+			IFACES=${IFACES}" ${i##*/}"
+		fi
+	done
+	echo ${IFACES:-eth0 eth1}
 
 }
 
-function mgmtiface(){
+function mgmtiface() {
 	local IFC ADDR GATEWAY
-	IFC=$1 ; shift
+	IFC=$1
+	shift
 	ADDR=$1
 	[ ${NETLSB} -ne 1 ] && GATEWAY="  gateway ${NETBASE}.${MGMT}.1"
-    cat << EOF > /mnt/etc/network/interfaces.d/mgmt.conf
+	cat <<EOF >/mnt/etc/network/interfaces.d/mgmt.conf
 ### ${IFC}
 auto ${IFC}
 iface ${IFC} inet static
@@ -216,8 +217,8 @@ iface ${IFC} inet static
 EOF
 }
 
-function storbr(){
-    cat << EOF > /mnt/etc/network/interfaces.d/storage.conf
+function storbr() {
+	cat <<EOF >/mnt/etc/network/interfaces.d/storage.conf
 ### storage
 auto storage
 iface storage inet manual
@@ -228,8 +229,8 @@ iface storage inet manual
 EOF
 }
 
-function pubiface(){
-    cat << EOF > /mnt/etc/network/interfaces.d/public.conf
+function pubiface() {
+	cat <<EOF >/mnt/etc/network/interfaces.d/public.conf
 ### public
 auto public
 iface public inet static
@@ -240,9 +241,9 @@ iface public inet static
 EOF
 }
 
-function prepsys(){
-    echo $AYSHOSTNAME > /mnt/etc/hostname
-    cat << EOF > /mnt/etc/network/interfaces
+function prepsys() {
+	echo $AYSHOSTNAME >/mnt/etc/hostname
+	cat <<EOF >/mnt/etc/network/interfaces
 # The loopback interface
 # Interfaces that comes with Debian Potato does not like to see
 # "auto" option before "iface" for the first device specified.
@@ -251,24 +252,24 @@ auto lo
 source /etc/network/interfaces.d/*conf
 EOF
 
-if [ ${#BONDIFACES[@]} -gt 1 ] ; then
-  cat << EOF > /mnt/etc/network/interfaces.d/Backplane1.conf
+	if [ ${#BONDIFACES[@]} -gt 1 ]; then
+		cat <<EOF >/mnt/etc/network/interfaces.d/Backplane1.conf
 ### backplane1
 auto backplane1
 iface backplane1 inet static
   address ${UNTAGIP}/${MASK}
 EOF
-  for iface in ${BONDIFACES[@]} ; do
-	 echo "  pre-up ip l set ${iface} up " >> /mnt/etc/network/interfaces.d/Backplane1.conf
-	 echo "  pre-up sysctl -w net.ipv6.conf.${iface}.disable_ipv6=1"  >> /mnt/etc/network/interfaces.d/Backplane1.conf
-  done
-  echo "  pre-up ovs-vsctl --may-exist add-br backplane1"  >> /mnt/etc/network/interfaces.d/Backplane1.conf
-  echo "  pre-up ovs-vsctl --may-exist add-bond backplane1 bond-backplane1 ${BONDIFACES[@]} bond_mode=balance-tcp lacp=active"  >> /mnt/etc/network/interfaces.d/Backplane1.conf
-  # and mgmt iface =
-  mgmtiface ${MGMT[0]} ${MGMTIP}
+		for iface in ${BONDIFACES[@]}; do
+			echo "  pre-up ip l set ${iface} up " >>/mnt/etc/network/interfaces.d/Backplane1.conf
+			echo "  pre-up sysctl -w net.ipv6.conf.${iface}.disable_ipv6=1" >>/mnt/etc/network/interfaces.d/Backplane1.conf
+		done
+		echo "  pre-up ovs-vsctl --may-exist add-br backplane1" >>/mnt/etc/network/interfaces.d/Backplane1.conf
+		echo "  pre-up ovs-vsctl --may-exist add-bond backplane1 bond-backplane1 ${BONDIFACES[@]} bond_mode=balance-tcp lacp=active" >>/mnt/etc/network/interfaces.d/Backplane1.conf
+		# and mgmt iface =
+		mgmtiface ${MGMT[0]} ${MGMTIP}
 
-else
-   cat << EOF > /mnt/etc/network/interfaces.d/Backplane1.conf
+	else
+		cat <<EOF >/mnt/etc/network/interfaces.d/Backplane1.conf
 ### backplane1
 auto backplane1
 iface backplane1 inet static
@@ -278,13 +279,13 @@ iface backplane1 inet static
   pre-up ip l set ${BONDIFACES[0]} up
   pre-up sysctl -w net.ipv6.conf.${BONDIFACES[0]}.disable_ipv6=1
 EOF
-  mgmtiface ${MGMT[0]} ${MGMTIP}
-  pubiface
-  storbr
-fi
+		mgmtiface ${MGMT[0]} ${MGMTIP}
+		pubiface
+		storbr
+	fi
 
-# Also, to make glibc happy, add hostname to /etc/hosts
-    cat << EOF > /mnt/etc/hosts
+	# Also, to make glibc happy, add hostname to /etc/hosts
+	cat <<EOF >/mnt/etc/hosts
 127.0.0.1   localhost $AYSHOSTNAME
 
 # The following lines are desirable for IPv6 capable hosts
@@ -293,10 +294,10 @@ ff02::1 ip6-allnodes
 ff02::2 ip6-allrouters
 EOF
 
-# Also remove OpenVSwitch initial db
-rm -f /mnt/etc/openvswitch/*
-# same for persitent net-rules
-cat << EOF > /mnt/etc/udev/rules.d/70-persistent-net.rules
+	# Also remove OpenVSwitch initial db
+	rm -f /mnt/etc/openvswitch/*
+	# same for persitent net-rules
+	cat <<EOF >/mnt/etc/udev/rules.d/70-persistent-net.rules
 # This file was automatically generated by the /lib/udev/write_net_rules
 # program, run by the persistent-net-generator.rules rules file.
 #
@@ -307,8 +308,8 @@ EOF
 
 }
 
-function installgrub(){
-    cat << EOF > /mnt/rungrub
+function installgrub() {
+	cat <<EOF >/mnt/rungrub
 #!/bin/bash
 echo "" > /etc/mdadm/mdadm.conf
 update-initramfs -c -k all
@@ -324,28 +325,27 @@ update-grub
 rm -f rungrub
 EOF
 
-    chmod 755 /mnt/rungrub
-    ./init-chroot /mnt /rungrub
+	chmod 755 /mnt/rungrub
+	./init-chroot /mnt /rungrub
 }
 
-
-function createswaps(){
-    # dont forget to create swapsig
-    if [ ${#DISKS[@]} -eq 1 ] ; then
-        mkswap /dev/${DISKS[0]}3
-    else
-        mkswap /dev/${DISKS[0]}3
-        mkswap /dev/${DISKS[1]}3
-    fi
+function createswaps() {
+	# dont forget to create swapsig
+	if [ ${#DISKS[@]} -eq 1 ]; then
+		mkswap /dev/${DISKS[0]}3
+	else
+		mkswap /dev/${DISKS[0]}3
+		mkswap /dev/${DISKS[1]}3
+	fi
 }
 
-function mkfstab(){
-    # generate fstab
-    BOOTUUID=`blkid -o value /dev/md0 -s UUID`
-    ROOTUUID=`blkid -o value /dev/md1 -s UUID`
-    SWAPUUID=`blkid -o value /dev/${DISKS[0]}3 -s UUID`
+function mkfstab() {
+	# generate fstab
+	BOOTUUID=$(blkid -o value /dev/md0 -s UUID)
+	ROOTUUID=$(blkid -o value /dev/md1 -s UUID)
+	SWAPUUID=$(blkid -o value /dev/${DISKS[0]}3 -s UUID)
 
-    cat <<EOF > /mnt/etc/fstab
+	cat <<EOF >/mnt/etc/fstab
 # <file system> <mount point>   <type>  <options>       <dump>  <pass>
 proc            /proc   proc    defaults                0       0
 sysfs           /sys    sysfs   defaults                0       0
@@ -354,34 +354,33 @@ UUID=${ROOTUUID}  /     ext4 defaults,discard,data=ordered 0 0
 UUID=${BOOTUUID}  /boot ext4 defaults 0 0
 UUID=${SWAPUUID} none swap sw 0 0
 EOF
-    if [ ${#DISKS[@]} -eq 2 ] ; then
-    SWAPUUID=`blkid -o value /dev/${DISKS[1]}3 -s UUID`
-    cat <<EOF >> /mnt/etc/fstab
+	if [ ${#DISKS[@]} -eq 2 ]; then
+		SWAPUUID=$(blkid -o value /dev/${DISKS[1]}3 -s UUID)
+		cat <<EOF >>/mnt/etc/fstab
 UUID=${SWAPUUID} none swap sw 0 0
 EOF
 	fi
 }
 
-
 # to use findifaces, you need to create an empty BONDIFACES array
-if [ ${#BONDIFACES[@]} -eq 0 ] ; then
-	BONDIFACES=( $(findXEifaces) )
+if [ ${#BONDIFACES[@]} -eq 0 ]; then
+	BONDIFACES=($(findXEifaces))
 fi
 # set hostname to some default
 hostname ${AYSHOSTNAME}
 export HOSTNAME=${AYSHOSTNAME}
 
 # run functions
-if [ ${#DISKS[@]} -eq 0 ] ; then
-# findssds
-  :
+if [ ${#DISKS[@]} -eq 0 ]; then
+	# findssds
+	:
 fi
 zappit
 genpartbios
-if [ ${#DISKS[@]} -eq 1 ] ; then
-    prepmountssingle
+if [ ${#DISKS[@]} -eq 1 ]; then
+	prepmountssingle
 else
-    prepmounts
+	prepmounts
 fi
 untarit
 prepsys
@@ -405,7 +404,7 @@ fi
 
 # get pubkey autorized_keys
 if [ ! "${fullroot}" = "" ]; then
-	wget ${fullroot}/pubkey -O - >> /mnt/root/.ssh/authorized_keys
+	wget ${fullroot}/pubkey -O - >>/mnt/root/.ssh/authorized_keys
 fi
 
 # umount the stuff
@@ -415,7 +414,10 @@ umount /mnt/boot /mnt
 
 echo "All done"
 
-while : ; do
-	( date; echo -e 'Finished installing Ctrl-02.\nPlease reboot without usb stick!!\n\n' ) > /dev/console
+while :; do
+	(
+		date
+		echo -e 'Finished installing Ctrl-02.\nPlease reboot without usb stick!!\n\n'
+	) >/dev/console
 	sleep 5
 done

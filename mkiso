@@ -64,7 +64,7 @@ EOF
 #     mkdir -p /var/ovc/pxeboot
 #     mkdir -p /var/ovc/0-access/index
 # }
-# 
+#
 # HOSTNAME=be-loc-4-ctrl-0${LSB}
 # DOMAIN=be-g8-4
 # MASK=24

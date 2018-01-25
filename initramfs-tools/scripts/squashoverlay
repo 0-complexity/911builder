@@ -3,15 +3,14 @@
 
 retry_nr=0
 
-mountroot()
-{
-	eval `cat /proc/cmdline`
+mountroot() {
+	eval $(cat /proc/cmdline)
 	[ "x${rootfile}" = "x" ] && rootfile="root.sqfs"
 	[ "$quiet" != "y" ] && log_end_msg
 	[ "$quiet" != "y" ] && log_begin_msg "Connecting to network..."
 	. /scripts/functions
-	if [ "${ip}" = "no" ] ; then
-		for i in /sys/class/net/en* ; do
+	if [ "${ip}" = "no" ]; then
+		for i in /sys/class/net/en*; do
 			touch /run/net-${i##*/}.conf
 		done
 	else
@@ -21,10 +20,10 @@ mountroot()
 	[ "$quiet" != "y" ] && log_end_msg
 	# get root.sqfs if it isn't there
 	[ "$quiet" != "y" ] && log_begin_msg "getting root.sqfs if necessary..."
-	if [ ! -f /root.sqfs ] ; then
+	if [ ! -f /root.sqfs ]; then
 		wget -O /root.sqfs ${fullroot}/root.sqfs
 		# we got here because no root.sqfs in initramfs
-		if [ $? -ne 0 ] ; then
+		if [ $? -ne 0 ]; then
 			# drop in a shell, 'caus otherwise it's dead anyhow
 			/bin/bash
 		fi
@@ -38,7 +37,7 @@ mountroot()
 	mkdir /rw/upper /rw/work
 	mount -o loop -t squashfs $rootfile /ro
 	mount -t overlay overlay -olowerdir=/ro,upperdir=/rw/upper,workdir=/rw/work ${rootmnt}
-	if [ $? -ne 0 ] ; then
+	if [ $? -ne 0 ]; then
 		# drop in a shell, 'caus otherwise it's dead anyhow
 		/bin/bash
 	fi
@@ -46,23 +45,22 @@ mountroot()
 	[ "$quiet" != "y" ] && log_begin_msg "freeing old image..."
 	rm ${rootmnt}/etc/mtab
 	ln -s /proc/self/mounts ${rootmnt}/etc/mtab
-	if [ "x${fullroot}" != "x" ] ; then
-	    wget ${fullroot}/Install -O ${rootmnt}/root/tools/Install
-	    mkdir -p ${rootmnt}/root/.ssh/
-	    wget ${fullroot}/pubkey -O - >> ${rootmnt}/root/.ssh/authorized_keys
-	    chmod 755 ${rootmnt}/root/tools/Install
+	if [ "x${fullroot}" != "x" ]; then
+		wget ${fullroot}/Install -O ${rootmnt}/root/tools/Install
+		mkdir -p ${rootmnt}/root/.ssh/
+		wget ${fullroot}/pubkey -O - >>${rootmnt}/root/.ssh/authorized_keys
+		chmod 755 ${rootmnt}/root/tools/Install
 	else
-	    :
- 	fi
-	if [ "x$debug" != "x" ] ; then
+		:
+	fi
+	if [ "x$debug" != "x" ]; then
 		/bin/bash
 	fi
 	[ "$quiet" != "y" ] && log_end_msg
 	# copy modules
 	[ "$quiet" != "y" ] && log_begin_msg "sending modules to new_root"
-	mkdir -p ${rootmnt}/lib/modules/`uname -r`
-	cp -ra /lib/modules/`uname -r` ${rootmnt}/lib/modules/
+	mkdir -p ${rootmnt}/lib/modules/$(uname -r)
+	cp -ra /lib/modules/$(uname -r) ${rootmnt}/lib/modules/
 	[ "$quiet" != "y" ] && log_end_msg
 	wait_for_udev 20
 }
-

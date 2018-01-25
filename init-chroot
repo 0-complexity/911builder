@@ -9,8 +9,7 @@ mount -t sysfs none ${dest}/sys
 
 chroot ${dest} "$@"
 
-umount  ${dest}/sys
-umount  ${dest}/dev/pts
-umount  ${dest}/dev
-umount  ${dest}/proc
-
+umount ${dest}/sys
+umount ${dest}/dev/pts
+umount ${dest}/dev
+umount ${dest}/proc
