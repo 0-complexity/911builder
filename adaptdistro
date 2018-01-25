@@ -1,5 +1,5 @@
 #!/bin/bash
-# NINSTALLER=${NINSTALLER:-yes}
+NINSTALLER=${NINSTALLER:-yes}
 
 # Install standard packages
 sed -i 's/main/main universe/' /etc/apt/sources.list
@@ -8,12 +8,12 @@ apt-get update
 
 export DEBIAN_FRONTEND=noninteractive
 
-while read line ; do
-    apt-get -q -y install $line
-done <<< $(cat pkglist)
+while read line; do
+	apt-get -q -y install $line
+done <<<$(cat pkglist)
 
 # geert's ninstaller
-if [ "$NINSTALLER" = "yes" ] ; then
+if [ "$NINSTALLER" = "yes" ]; then
 	# Python-pip... yeah fsck
 	apt-get -q -y install python3-pip
 	# now we're twice as big :-(
@@ -36,7 +36,7 @@ sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
 
 # configure networking
 # no Ufuktu stuff
-cat << EOF > /etc/systemd/network/en.network
+cat <<EOF >/etc/systemd/network/en.network
 [Match]
 Name=en*
 [Network]
@@ -46,9 +46,9 @@ systemctl enable systemd-networkd
 systemctl disable networking
 
 # give it a sensible hostname
-echo "boot911" > /etc/hostname
-echo "127.0.0.1 boot911" >> /etc/hosts
-echo "::1 boot911" >> /etc/hosts
+echo "boot911" >/etc/hostname
+echo "127.0.0.1 boot911" >>/etc/hosts
+echo "::1 boot911" >>/etc/hosts
 
 # get resolving working
 systemctl enable systemd-resolved
@@ -60,15 +60,14 @@ useradd -Gsudo -m -s /bin/bash -c "GreenITGlobe User" gig
 echo "root:rooter" | chpasswd
 echo "gig:rooter" | chpasswd
 
-mkdir /root/tools > /dev/null 2>&1
+mkdir /root/tools &>/dev/null
 mv /Install /init-chroot /CtrlInstall /root/tools
 chmod 755 /root/tools/init-chroot
 chmod 755 /root/tools/Install
 
-
 # Run Installer
 #
-cat << EOF > /etc/systemd/system/rc-local.service
+cat <<EOF >/etc/systemd/system/rc-local.service
 [Unit]
 Description=/etc/rc.local Compatibility
 ConditionPathExists=/etc/rc.local
@@ -97,7 +96,7 @@ EOF
 
 # /etc/rc.local starts /root/tools/CtrlInstall
 
-cat << EOF > /etc/rc.local
+cat <<EOF >/etc/rc.local
 #!/bin/bash
 eval \$( cat /proc/cmdline )
 if [ "\${install}" = "" ] ; then
@@ -112,4 +111,3 @@ EOF
 # executable
 
 chmod 755 /etc/rc.local
-
