@@ -1,6 +1,6 @@
 ## 911builder
 
-### What is dis ?
+### Wat iz dis ?
 
 911 builder creates an initramfs that can bue used with the same kernel as is running on this machine that:
   - runs a complete ubuntu in memory
