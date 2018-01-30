@@ -392,12 +392,12 @@ if [ ! "$install" = "" ]; then
 	if [ "${OURFILESERVER}" = "LOCAL" ]; then
 		if [ -d "/root/etc" ]; then
 			[ -f "/root/etc/id_rsa.pub" ] &&
-				cat /root/etc/id_rsa.pub >>/mnt/root/.ssh/authorized_keys
+				cat /root/etc/id_rsa.pub >/mnt/root/.ssh/authorized_keys
 		else
 			mkdir -p /root/USB
 			mount -r -L GIGINSTALL /root/USB
 			[ -f "/root/USB/etc/id_rsa.pub" ] &&
-				cat /root/USB/etc/id_rsa.pub >>/mnt/root/.ssh/authorized_keys
+				cat /root/USB/etc/id_rsa.pub >/mnt/root/.ssh/authorized_keys
 		fi
 	fi
 fi

@@ -64,6 +64,8 @@ mkdir /root/tools &>/dev/null
 mv /Install /init-chroot /CtrlInstall /root/tools
 chmod 755 /root/tools/init-chroot
 chmod 755 /root/tools/Install
+# add Geert's requirements for 'ninstaller'
+
 
 # Run Installer
 #
@@ -86,6 +88,7 @@ WantedBy=multi-user.target
 EOF
 
 systemctl enable rc-local
+
 
 # Don't clear console
 mkdir /etc/systemd/system/getty@.service.d
