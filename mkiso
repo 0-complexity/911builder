@@ -1,5 +1,7 @@
 #!/bin/bash
 
+DESTFILE=${1:-GIGINSTALLER}.iso
+
 site=http://10.101.107.254:8080
 image=ubuntu-16.04.3-20171130.tgz
 # basically, create a bootable iso
@@ -80,12 +82,15 @@ EOF
 # EOF
 # done
 
+# get files from Geert
+cp -rav etc binaries
+
 
 # create the ISO
 cd binaries
-mkisofs -r -V GIGINSTALL -cache-inodes -J -l -b isolinux/isolinux.bin \
+genisoimage -r -V GIGINSTALL -cache-inodes -J -l -b isolinux/isolinux.bin \
 	-c isolinux/boot.cat -no-emul-boot -boot-load-size 4 \
-	-boot-info-table -o ../GIGINSTALLER.iso .
+	-boot-info-table -o ../${DESTFILE} .
 cd ..
 # give it also a bootblock for starting from USB
 isohybrid GIGINSTALLER.iso
