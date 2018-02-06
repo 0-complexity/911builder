@@ -2,7 +2,7 @@
 
 DESTFILE=${1:-GIGINSTALLER}.iso
 
-site=http://10.101.107.254:8080
+site=http://lede.gig.tech
 image=ubuntu-16.04.3-20171130.tgz
 # basically, create a bootable iso
 #   - vmlinuz
