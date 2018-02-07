@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DESTFILE=${1:-GIGINSTALLER}.iso
+DESTFILE=${1:-GIGINSTALLER.iso}
 
 site=http://lede.gig.tech
 image=ubuntu-16.04.3-20171130.tgz
@@ -90,7 +90,7 @@ cp -rav etc binaries
 cd binaries
 genisoimage -r -V GIGINSTALL -cache-inodes -J -l -b isolinux/isolinux.bin \
 	-c isolinux/boot.cat -no-emul-boot -boot-load-size 4 \
-	-boot-info-table -o ../${DESTFILE} .
+	-boot-info-table -o ${DESTFILE} .
 cd ..
 # give it also a bootblock for starting from USB
-isohybrid GIGINSTALLER.iso
+isohybrid ${DESTFILE}
