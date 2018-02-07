@@ -206,13 +206,14 @@ function mgmtiface() {
 	[ ${NETLSB} -ne 1 ] && GATEWAY="  gateway ${NETBASE}.${MGMT}.1"
 	cat <<EOF >/mnt/etc/network/interfaces.d/mgmt.conf
 ### ${IFC}
-auto ${IFC}
-iface ${IFC} inet static
+auto mgmt
+iface mgmt inet static
   address ${ADDR}/24
   ${GATEWAY}
   pre-up ovs-vsctl --may-exist add-br mgmt
   pre-up ovs-vsctl --may-exist add-port mgmt ${IFC}
-iface ${IFC} inet static
+  pre-up ip l set ${IFC} up
+iface mgmt inet static
   address ${IPMIIP}/24
 EOF
 }
@@ -402,6 +403,10 @@ if [ ! "$install" = "" ]; then
 	fi
 fi
 
+# remove rsa keys that linger from image
+rm /mnt/root/.ssh/id_rsa* /mnt/root/.ssh/known_hosts
+rm /mnt/home/gig/.ssh/id_rsa* /mnt/home/gig/.ssh/known_hosts
+
 # get pubkey autorized_keys
 if [ ! "${fullroot}" = "" ]; then
 	wget ${fullroot}/pubkey -O - >>/mnt/root/.ssh/authorized_keys
@@ -414,10 +419,17 @@ umount /mnt/boot /mnt
 
 echo "All done"
 
+cnt=0
 while :; do
 	(
 		date
 		echo -e 'Finished installing Ctrl-02.\nPlease reboot without usb stick!!\n\n'
 	) >/dev/console
 	sleep 5
+	if [ $cnt -gt 5 ]; then
+		exit 0
+	fi
+	let cnt++
 done
+
+exit 0

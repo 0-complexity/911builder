@@ -66,7 +66,6 @@ chmod 755 /root/tools/init-chroot
 chmod 755 /root/tools/Install
 # add Geert's requirements for 'ninstaller'
 
-
 # Run Installer
 #
 cat <<EOF >/etc/systemd/system/rc-local.service
@@ -89,9 +88,8 @@ EOF
 
 systemctl enable rc-local
 
-
 # Don't clear console
-mkdir /etc/systemd/system/getty@.service.d
+[ ! -d /etc/systemd/system/getty@.service.d ] && mkdir /etc/systemd/system/getty@.service.d
 cat >/etc/systemd/system/getty@.service.d/noclear.conf <<EOF
 [Service]
 TTYVTDisallocate=no
