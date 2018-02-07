@@ -404,8 +404,8 @@ if [ ! "$install" = "" ]; then
 fi
 
 # remove rsa keys that linger from image
-rm /mnt/root/.ssh/id_rsa* /mnt/root/.ssh/known_hosts
-rm /mnt/home/gig/.ssh/id_rsa* /mnt/home/gig/.ssh/known_hosts
+rm -f /mnt/root/.ssh/id_rsa* /mnt/root/.ssh/known_hosts
+rm -f /mnt/home/gig/.ssh/id_rsa* /mnt/home/gig/.ssh/known_hosts
 
 # get pubkey autorized_keys
 if [ ! "${fullroot}" = "" ]; then
