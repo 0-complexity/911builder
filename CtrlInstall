@@ -11,6 +11,11 @@ if [ ! "$install" = "" ]; then
 	if [ "${OURFILESERVER}" = "LOCAL" ]; then
 		if [ -d "/root/etc" ]; then
 			source /root/etc/${install}.conf
+		elif [ "${INSTALL}" = "manual" ] ; then
+			install=${1}
+			mkdir -p /root/USB
+			mount -r -L GIGINSTALL /root/USB
+			source /root/USB/etc/${install}
 		else
 			mkdir -p /root/USB
 			mount -r -L GIGINSTALL /root/USB
@@ -19,7 +24,7 @@ if [ ! "$install" = "" ]; then
 	fi
 fi
 
-AYSHOSTNAME=${HOSTNAME}.${DNSDOMAIN}
+AYSHOSTNAME=${HOSTNAME}.${DNSDOMAIN:-$DOMAIN}
 
 NETLSB=${MGMTIP##*.}
 OSIMAGE="ubuntu-16.04.3-20171130.tgz"
