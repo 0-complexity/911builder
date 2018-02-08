@@ -76,7 +76,7 @@ ConditionPathExists=/etc/rc.local
 [Service]
 Type=idle
 ExecStart=/etc/rc.local
-Standard{Output,Error}=journal+console
+Standard{Output,Error}=journal
 TimeoutSec=0
 StandardOutput=tty
 RemainAfterExit=yes
