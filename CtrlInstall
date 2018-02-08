@@ -1,5 +1,6 @@
 #!/bin/bash
 MOBO=$(sudo dmidecode -t 2 | awk '/Product Name:/{print $3}')
+MOBO=${MOBO:-QEMU}
 source /run/net-*.conf
 
 # PXE created environment
@@ -38,6 +39,11 @@ case "$MOBO" in
 	VirtualBox) # Playground for geert
 		BONDIFACES=('enp0s3')
 		MGMT=('enp0s8')
+		DISKS=(sda sdb)
+		;;
+	QEMU) # Playground for Jan
+		BONDIFACES=('ens3')
+		MGMT=('ens9')
 		DISKS=(sda sdb)
 		;;
 	*)
@@ -428,7 +434,7 @@ cnt=0
 while :; do
 	(
 		date
-		echo -e 'Finished installing Ctrl-02.\nPlease reboot without usb stick!!\n\n'
+		echo -e "Finished installing ${install}.\nPlease reboot without usb stick!!\n\n"
 	) >/dev/console
 	sleep 5
 	if [ $cnt -gt 5 ]; then
