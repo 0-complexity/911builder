@@ -74,7 +74,7 @@ Description=/etc/rc.local Compatibility
 ConditionPathExists=/etc/rc.local
 
 [Service]
-Type=forking
+Type=idle
 ExecStart=/etc/rc.local
 Standard{Output,Error}=journal+console
 TimeoutSec=0
