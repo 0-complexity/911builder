@@ -5,7 +5,7 @@ RUN apt-get update ; \
     DEBIAN_FRONTEND=noninteractive apt-get -y install build-essential debootstrap git
 
 # yea, I need some tools too, whe I do ./runenv
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y install vim-nox
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y install vim-nox pigz
 
 # get kernel in there
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install linux-headers-4.13.0-19-generic \

@@ -21,6 +21,12 @@ ${SUDO} cp init-chroot ubupkglist adaptubuimage root
 ${SUDO} chroot root chmod +x adaptubuimage
 ${SUDO} chroot root /adaptubuimage
 
+# image is built, tar it up
+cd uburoot
+${SUDO} tar  --numeric-owner -cf - . | pigz -c > ../binaries/ubuimage-16.04.3.tgz
+
+
+
 
 
 
