@@ -2,6 +2,7 @@
 ramfs
 # not the root tree
 root/**
+uburoot/**
 binaries/*
 etc/**
 GIGINSTALLER.iso

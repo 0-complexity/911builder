@@ -1,0 +1,26 @@
+#!/bin/bash
+trap "exit" INT
+set -x
+
+KVER=4.13.0-19-generic
+
+# when running in a docker, we're root (no sudo)
+SUDO="sudo "
+[ $(awk -F/ '$2 == "docker"' /proc/self/cgroup | wc -l) -ne 0 ] && SUDO=""
+
+source initramfs-tools/initramfs.conf
+
+if [ ! -d uburoot ] ; then
+	# if the dir exists, we assume that part is already done
+	# Otherwise:
+	mkdir uburoot
+	${SUDO} debootstrap --arch=amd64 ${DISTRO} uburoot  http://nl.archive.ubuntu.com/ubuntu/
+fi
+
+${SUDO} cp init-chroot ubupkglist adaptubuimage root
+${SUDO} chroot root chmod +x adaptubuimage
+${SUDO} chroot root /adaptubuimage
+
+
+
+
