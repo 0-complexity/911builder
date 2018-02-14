@@ -8,7 +8,7 @@ KVER=4.13.0-19-generic
 SUDO="sudo "
 [ $(awk -F/ '$2 == "docker"' /proc/self/cgroup | wc -l) -ne 0 ] && SUDO=""
 
-source initramfs-tools/initramfs.conf
+DISTRO=xenial
 
 if [ ! -d uburoot ] ; then
 	# if the dir exists, we assume that part is already done
