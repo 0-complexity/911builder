@@ -9,8 +9,7 @@ eval $( cat /proc/cmdline ) &> /dev/null
 OURFILESERVER=${fullroot:-LOCAL}
 
 MOBO=`dmidecode -t 2 | awk '/Product Name:/{print $3}'`
-# OSIMAGE="ubuntu-16.04.3-20171028.tgz"
-OSIMAGE="ubuntu-16.04.3-20171130.tgz"
+OSIMAGE="ubuimage-16.04.3.tgz"
 case "$MOBO" in
    S2P-MB) # Quanta Storage Node
 	BONDIFACES=() # filled in by findifaces
@@ -589,7 +588,7 @@ LSBIP=$(echo $IPV4ADDR | awk -F . '{printf "%02d",$4}')
 BKPLNIP=`echo $IPV4ADDR | awk -F . '{print $1"."$2"."$3-1"."$4}'`
 STORIP=`echo $IPV4ADDR | awk -F . '{print $1"."$2"."$3+1"."$4}'`
 HOSTNUM=`echo $IPV4ADDR | awk -F . '{printf "%02d",$4 - 100}'`
-HOSTNAME=${HOSTNAME:-CHANGEME}
+HOSTNAME=${HOSTNAME:-baseimage}
 DNSDOMAIN=${DNSDOMAIN:-local}
 AYSHOSTNAME=${HOSTNAME,,}.${DNSDOMAIN,,}
 # to use findifaces, you need to create an empty BONDIFACES array

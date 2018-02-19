@@ -1,7 +1,16 @@
 #!/bin/bash
-
+KVER=4.13.0-31-generic
 # Install standard packages
-sed -i 's/main/main universe/' /etc/apt/sources.list
+
+# get a proper apt config
+cat << EOF >/etc/apt/sources.list
+deb http://nl.archive.ubuntu.com/ubuntu xenial main
+deb http://nl.archive.ubuntu.com/ubuntu xenial universe
+deb http://nl.archive.ubuntu.com/ubuntu xenial multiverse
+deb http://nl.archive.ubuntu.com/ubuntu xenial-updates main
+deb http://nl.archive.ubuntu.com/ubuntu xenial-updates universe
+deb http://nl.archive.ubuntu.com/ubuntu xenial-updates multiverse
+EOF
 
 apt-get update
 
@@ -10,6 +19,15 @@ export DEBIAN_FRONTEND=noninteractive
 while read line; do
 	apt-get -q -y install $line
 done <<<$(cat ubupkglist)
+
+# add kernel
+apt-get -q -y install linux-image-${KVER} linux-image-extra-${KVER} linux-headers-${KVER} linux-tools-${KVER}
+
+# remove autoinstalled ssh keys
+rm /etc/ssh/*key*
+
+#prepare for authorized_keys
+mkdir /root/.ssh
 
 # need to be accessible as root (wtf)
 sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config

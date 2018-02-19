@@ -2,7 +2,7 @@
 trap "exit" INT
 set -x
 
-KVER=4.13.0-19-generic
+KVER=4.13.0-31-generic
 
 # when running in a docker, we're root (no sudo)
 SUDO="sudo "
@@ -15,7 +15,6 @@ if [ ! -d root ] ; then
 	# Otherwise:
 	mkdir root
 	${SUDO} debootstrap --arch=amd64 ${DISTRO} root  http://nl.archive.ubuntu.com/ubuntu/
-	# add packages
 fi
 
 ${SUDO} cp Install init-chroot pkglist adaptdistro CtrlInstall root

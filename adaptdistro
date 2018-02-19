@@ -1,4 +1,6 @@
 #!/bin/bash
+KVER=4.13.0-31-generic
+
 NINSTALLER=${NINSTALLER:-yes}
 
 # Install standard packages
@@ -11,6 +13,9 @@ export DEBIAN_FRONTEND=noninteractive
 while read line; do
 	apt-get -q -y install $line
 done <<<$(cat pkglist)
+
+# add kernel
+apt-get -q -y install linux-image-${KVER} linux-image-extra-${KVER} linux-headers-${KVER} linux-tools-${KVER}
 
 # geert's ninstaller
 if [ "$NINSTALLER" = "yes" ]; then

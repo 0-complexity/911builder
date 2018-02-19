@@ -1,8 +1,5 @@
 #!/bin/bash
 trap "exit" INT
-set -x
-
-KVER=4.13.0-19-generic
 
 # when running in a docker, we're root (no sudo)
 SUDO="sudo "
@@ -17,16 +14,10 @@ if [ ! -d uburoot ] ; then
 	${SUDO} debootstrap --arch=amd64 ${DISTRO} uburoot  http://nl.archive.ubuntu.com/ubuntu/
 fi
 
-${SUDO} cp init-chroot ubupkglist adaptubuimage root
-${SUDO} chroot root chmod +x adaptubuimage
-${SUDO} chroot root /adaptubuimage
+${SUDO} cp init-chroot ubupkglist adaptubuimage uburoot
+${SUDO} chroot uburoot chmod +x adaptubuimage
+${SUDO} ./init-chroot uburoot /adaptubuimage
 
 # image is built, tar it up
 cd uburoot
 ${SUDO} tar  --numeric-owner -cf - . | pigz -c > ../binaries/ubuimage-16.04.3.tgz
-
-
-
-
-
-

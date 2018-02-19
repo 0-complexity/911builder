@@ -1,4 +1,4 @@
-openvswitch-switch
+apparmor
 tcpdump
 nmap
 btrfs-tools
@@ -17,7 +17,6 @@ ipmitool
 genisoimage
 git
 gzip
-gunzip
 htop
 ifstat
 ifenslave
@@ -35,18 +34,18 @@ lshw
 lsof
 lsscsi
 mdadm
-mstflint
 net-tools
 netcat-openbsd
-mtr
+mtr-tiny
 openssh-server
 openssh-client
 openssh-sftp-server
 openssl
 openvswitch-switch
-openvswitch-datapath-dkms
 pciutils
 pigz
+apmd
+cpufrequtils
 pm-utils
 quilt
 rsync
@@ -57,6 +56,7 @@ ssh
 sshpass
 strace
 sysstat
+isag
 ufw
 unzip
 usbutils
@@ -67,4 +67,6 @@ wget
 curl
 xz-utils
 zerofree
+grub2-common
+grub-pc
 

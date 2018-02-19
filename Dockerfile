@@ -9,9 +9,9 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y install vim-nox pigz
 
 # get kernel in there
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install linux-headers-4.13.0-19-generic \
-    linux-image-4.13.0-19-generic \
-    linux-image-extra-4.13.0-19-generic \
-    linux-tools-4.13.0-19-generic
+    linux-image-4.13.0-31-generic \
+    linux-image-extra-4.13.0-31-generic \
+    linux-tools-4.13.0-31-generic
 
 # get some cdrom tools in place
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install genisoimage isolinux \
