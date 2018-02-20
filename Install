@@ -479,6 +479,16 @@ EOF
 	./init-chroot /mnt /rungrub
 }
 
+
+function fixQCTinitramfs(){
+    # with the latest (16.04.3) initramfsbuilder, when a device is recognized,
+    # the bootscripts don't wait for udev to settle. apparently this wreaks
+    # havoc on the QCT, with the loading of the ahci controller, and mounting
+    # the btrfs /
+    # Lets have it behave again
+    sed -i 's/.*wait-for-root.*/\t\twait_for_udev 10/' /mnt/share/initramfs-tools/scritps/local
+}
+
 function createswaps() {
 	# dont forget to create swapsig
 	if [ $ONEDISK == 1 ]; then
@@ -596,6 +606,10 @@ prepsys
 createswaps
 mkfstab
 installgrub
+# Also, if QCT, fix initramfs
+if [ "$MOBO" = "S2P-MB" ] ; then
+	fixQCTinitramfs
+fi
 
 # get pubkey autorized_keys
 wget ${fullroot}/pubkey -O - >>/mnt/root/.ssh/authorized_keys
