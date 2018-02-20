@@ -2,7 +2,6 @@
 
 DESTFILE=${1:-GIGINSTALLER.iso}
 
-site=http://lede.gig.tech
 image=ubuimage-16.04.3.tgz
 # basically, create a bootable iso
 #   - vmlinuz
@@ -11,10 +10,6 @@ image=ubuimage-16.04.3.tgz
 #   - Installer
 # the ISO needs to have Label
 
-# get the image
-if [ ! -f binaries/${image} ] ; then
-    wget --no-verbose ${site}/${image} -O binaries/${image}
-fi
 
 # ok, on with it
 mkdir binaries/isolinux

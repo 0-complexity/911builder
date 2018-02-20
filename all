@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# build 911 image
+NINSTALLER=no ./prepareroot
+
+# build install image for nodes
+./prepareubuimage
+
+# make the iso
+./mkiso GIGINSTALLER.iso

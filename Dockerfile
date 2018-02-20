@@ -20,7 +20,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y install genisoimage isolinux \
 # some bins that get copied into the initramfs
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install squashfs-tools ipmitool
 
-CMD bash -c "cd /911builder ; ./prepareroot"
+CMD bash -c "cd /911builder ; ./all"
 # get myself (911builder) in the dock
 # Nope : use `-v $(pwd)/ /911builder
 # ADD . /911builder/
