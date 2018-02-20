@@ -31,7 +31,7 @@ fi
 AYSHOSTNAME=${HOSTNAME}.${DNSDOMAIN:-$DOMAIN}
 
 NETLSB=${MGMTIP##*.}
-OSIMAGE="ubuntu-16.04.3-20171130.tgz"
+OSIMAGE="ubuimage-16.04.3.tgz"
 
 case "$MOBO" in
 	G1SCN-B) # Gooxi Controller node
