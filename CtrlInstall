@@ -108,24 +108,21 @@ function genpartbios() {
 	if [ ${#DISKSS[@]} -eq 1 ]; then
 		parted /dev/${DISKS[0]} -s mklabel gpt \
 			mkpart bios ext2 1 8M \
-			mkpart swap linux-swap 8M 8G \
-			mkpart boot ext2 8G 10G \
-			mkpart root ext2 10G 100% \
-			set 1 bios_grub on set 2 raid on set 4 raid on
+			mkpart boot ext2 8M 2G \
+			mkpart root ext2 2G 100% \
+			set 1 bios_grub on set 2 raid on set 3 raid on
 	else
 		parted /dev/${DISKS[0]} -s mklabel gpt \
 			mkpart bios ext2 1 8M \
-			mkpart boot ext2 8G 10G \
-			mkpart swap linux-swap 8M 8G \
-			mkpart root ext2 10G 100% \
-			set 1 bios_grub on set 2 raid on set 4 raid on
+			mkpart boot ext2 8M 2G \
+			mkpart root ext2 2G 100% \
+			set 1 bios_grub on set 2 raid on set 3 raid on
 
 		parted /dev/${DISKS[1]} -s mklabel gpt \
 			mkpart bios ext2 1 8M \
-			mkpart boot ext2 8G 10G \
-			mkpart swap linux-swap 8M 8G \
-			mkpart root ext2 10G 100% \
-			set 1 bios_grub on set 2 raid on set 4 raid on
+			mkpart boot ext2 8M 2G \
+			mkpart root ext2 2G 100% \
+			set 1 bios_grub on set 2 raid on set 3 raid on
 	fi
 	# need to sleep here a bit for udev to settle
 	udevadm settle
@@ -141,7 +138,7 @@ function prepmounts() {
 	mkfs.ext4 -L BOOT /dev/md0
 
 	# prepare root partition
-	yes | mdadm --create /dev/md1 -l1 -n2 /dev/${DISKS[0]}4 /dev/${DISKS[1]}4 --force
+	yes | mdadm --create /dev/md1 -l1 -n2 /dev/${DISKS[0]}3 /dev/${DISKS[1]}3 --force
 	mkfs.ext4 /dev/md1 -E lazy_itable_init=1
 
 	# mount it
@@ -159,7 +156,7 @@ function prepmountssingle() {
 	mkfs.ext4 -L BOOT /dev/md0
 
 	# prepare root partition
-	yes | mdadm --create /dev/md1 -l1 -n2 /dev/${DISKS[0]}4 missing --force
+	yes | mdadm --create /dev/md1 -l1 -n2 /dev/${DISKS[0]}3 missing --force
 	mkfs.ext4 /dev/md1 -E lazy_itable_init=1
 
 	# mount it
@@ -344,16 +341,6 @@ EOF
 	./init-chroot /mnt /rungrub
 }
 
-function createswaps() {
-	# dont forget to create swapsig
-	if [ ${#DISKS[@]} -eq 1 ]; then
-		mkswap /dev/${DISKS[0]}3
-	else
-		mkswap /dev/${DISKS[0]}3
-		mkswap /dev/${DISKS[1]}3
-	fi
-}
-
 function mkfstab() {
 	# generate fstab
 	BOOTUUID=$(blkid -o value /dev/md0 -s UUID)
@@ -399,7 +386,6 @@ else
 fi
 untarit
 prepsys
-createswaps
 mkfstab
 installgrub
 
