@@ -1,7 +1,7 @@
 #!/bin/bash
 KVER=4.13.0-31-generic
 
-NINSTALLER=${NINSTALLER:-yes}
+NINSTALLER=${NINSTALLER:-no}
 
 # Install standard packages
 sed -i 's/main/main universe/' /etc/apt/sources.list
