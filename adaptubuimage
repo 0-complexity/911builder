@@ -13,6 +13,8 @@ deb http://nl.archive.ubuntu.com/ubuntu xenial-updates multiverse
 EOF
 
 apt-get update
+apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade
+
 
 export DEBIAN_FRONTEND=noninteractive
 
@@ -52,4 +54,6 @@ cat >/etc/systemd/system/getty@.service.d/noclear.conf <<EOF
 [Service]
 TTYVTDisallocate=no
 EOF
+
+apt-get -y clean
 

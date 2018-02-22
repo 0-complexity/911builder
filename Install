@@ -349,6 +349,7 @@ EOF
 	if [ "${IFC}" = "storage" ]; then
 		echo "  pre-up ovs-vsctl --may-exist add-port backplane1 storage tag=2315 -- set Interface storage type=internal" >>/mnt/etc/network/interfaces.d/storage.conf
 	fi
+	echo "  post-up tc qdisc replace dev storage root fq" >>/mnt/etc/network/interfaces.d/storage.conf
 }
 
 function mgmtiface() {
@@ -365,6 +366,7 @@ iface ${IFC} inet static
   netmask ${IPV4NETMASK}
   gateway ${IPV4GATEWAY}
   dns-nameservers ${ROOTSERVER}
+  post-up tc qdisc replace dev ${IFC} root fq
 EOF
 	if [ "${MGMT[0]}" == "ovs" ]; then
 		cat <<EOF >>/mnt/etc/network/interfaces.d/mgmt.conf
@@ -399,9 +401,11 @@ EOF
 			echo "  pre-up ip l set ${iface} up " >>/mnt/etc/network/interfaces.d/Backplane1.conf
 			echo "  pre-up ip l set ${iface} mtu 9000" >>/mnt/etc/network/interfaces.d/Backplane1.conf
 			echo "  pre-up sysctl -w net.ipv6.conf.${iface}.disable_ipv6=1" >>/mnt/etc/network/interfaces.d/Backplane1.conf
+			echo "  post-up tc qdisc replace dev ${iface} root fq" >>/mnt/etc/network/interfaces.d/Backplane1.conf
 		done
 		echo "  pre-up ovs-vsctl --may-exist add-br backplane1" >>/mnt/etc/network/interfaces.d/Backplane1.conf
 		echo "  pre-up ovs-vsctl --may-exist add-bond backplane1 bond-backplane1 ${BONDIFACES[@]} bond_mode=balance-tcp lacp=active" >>/mnt/etc/network/interfaces.d/Backplane1.conf
+		echo "  post-up tc qdisc replace dev backplane1 root fq" >>/mnt/etc/network/interfaces.d/Backplane1.conf
 		# and mgmt iface =
 		mgmtiface ${MGMT[0]}
 		storiface ${STORIFACE}
@@ -425,6 +429,8 @@ iface backplane1 inet static
   pre-up ip l set ${BONDIFACES[0]} mtu 9000
   pre-up ip l set ${BONDIFACES[0]} up
   pre-up sysctl -w net.ipv6.conf.${BONDIFACES[0]}.disable_ipv6=1
+  post-up tc qdisc replace dev ${BONDIFACES[0]} root fq
+  post-up tc qdisc replace dev backplane1 root fq
 EOF
 		mgmtiface ${MGMT[0]}
 		storiface ${STORIFACE}
