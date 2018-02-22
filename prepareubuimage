@@ -19,5 +19,8 @@ ${SUDO} chroot uburoot chmod +x adaptubuimage
 ${SUDO} ./init-chroot uburoot /adaptubuimage
 
 # image is built, tar it up
+echo "[+] Tarring it up, plz w8"
 cd uburoot
 ${SUDO} tar  --numeric-owner -cf - . | pigz -c > ../binaries/ubuimage-16.04.3.tgz
+
+echo "[+] DONE !"

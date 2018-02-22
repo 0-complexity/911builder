@@ -11,10 +11,12 @@ tmux
 mc
 bc
 bmon
+bash-completion
 cpio
 curl
 ethtool
 ipmitool
+dmidecode
 genisoimage
 git
 gzip

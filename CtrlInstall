@@ -1,7 +1,7 @@
 #!/bin/bash
 cd /root/tools
 sleep 10
-exec 2>&1 > $(pwd)/install.log
+exec 2>&1 >$(pwd)/install.log
 MOBO=$(sudo dmidecode -t 2 | awk '/Product Name:/{print $3}')
 MOBO=${MOBO:-QEMU}
 source /run/net-*.conf
@@ -15,7 +15,7 @@ if [ ! "$install" = "" ]; then
 	if [ "${OURFILESERVER}" = "LOCAL" ]; then
 		if [ -d "/root/etc" ]; then
 			source /root/etc/${install}.conf
-		elif [ "${INSTALL}" = "manual" ] ; then
+		elif [ "${INSTALL}" = "manual" ]; then
 			install=${1}
 			mkdir -p /root/USB
 			mount -r -L GIGINSTALL /root/USB

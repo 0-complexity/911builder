@@ -48,17 +48,17 @@ case "$MOBO" in
 		MGMT=('eno1')
 		;;
 	X10DRW-N) # SuperMicro UberServer (be-g8-1)
-		BONDIFACES=('ens1f0' 'ens1f1')
+		BONDIFACES=()
 		STORIFACE="storage"
 		MGMT=('eno1')
 		;;
 	X10SDV-TLN4F) # be-scale-X SuperMicro
 		BONDIFACES=('eth0' 'eth1')
-		MGMT=('em1')
+		MGMT=('eno1')
 		;;
 	X10DRFR-NT) # SuperMicro Converged 4-node box
-		BONDIFACES=('em1' 'em2')
-		MGMT=('p2049p1')
+		BONDIFACES=()
+		MGMT=('eno1')
 		;;
 	X10DRT-H) # SuperMicro Fat-Twin G8 nodes (axs)
 		BONDIFACES=('ens1d1')
@@ -464,16 +464,14 @@ update-initramfs -c -k all
 rm -f /boot/grub/grub.cfg
 grub-install --force /dev/${DISK1}
 grub-install --force /dev/${DISK2} &> /dev/null
-# sed -ie 's/#GRUB_TERMINAL/GRUB_TERMINAL="serial console"/' /etc/default/grub
+sed -ie 's/#GRUB_TERMINAL/GRUB_TERMINAL="serial console"/' /etc/default/grub
 cat << EEOF >> /etc/default/grub
 GRUB_SERIAL_COMMAND="serial --speed=19200 --unit=0 --word=8 --parity=no --stop=1"
 EEOF
-sed -ie 's/^#GRUB_TERMINAL=.*/GRUB_TERMINAL=console/' /etc/default/grub
-sed -ie
-'s/^GRUB_CMDLINE_LINUX_DEFAULT.*/GRUB_CMDLINE_LINUX_DEFAULT="console=tty0 text"/g' /etc/default/grub
-sed -ie 's/^GRUB_HIDDEN_TIMEOUT_QUIET=.*/GRUB_HIDDEN_TIMEOUT_QUIET=false/g' /etc/default/grub
-sed -ie 's/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=5/' /etc/default/grub
+sed -ie 's/^GRUB_CMDLINE_LINUX_DEFAULT.*/GRUB_CMDLINE_LINUX_DEFAULT="console=tty0 text"/g' /etc/default/grub
 echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
+echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
+
 
 # we deleted the ssh_hostkeys in the image, regenerate them
 dpkg-reconfigure openssh-server
