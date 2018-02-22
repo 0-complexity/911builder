@@ -301,6 +301,7 @@ function efimounts() {
 }
 
 function untarit() {
+	echo "[+] Untarring image in /mnt"
 	if [ "$OURFILESERVER" = "LOCAL" ]; then
 		# we're on our own, no network
 		mkdir -p /root/USB
@@ -320,6 +321,7 @@ function untarit() {
 		fi
 	fi
 	echo "13 4 * * 1 /bin/btrfs balance start -dusage=80 /" >>/mnt/var/spool/cron/crontabs/root
+	echo "[+] DONE!"
 }
 
 function findifaces() {
@@ -484,14 +486,13 @@ EOF
 	./init-chroot /mnt /rungrub
 }
 
-
-function fixQCTinitramfs(){
-    # with the latest (16.04.3) initramfsbuilder, when a device is recognized,
-    # the bootscripts don't wait for udev to settle. apparently this wreaks
-    # havoc on the QCT, with the loading of the ahci controller, and mounting
-    # the btrfs /
-    # Lets have it behave again
-    sed -i 's/.*wait-for-root.*/\t\twait_for_udev 20/' /mnt/usr/share/initramfs-tools/scripts/local
+function fixQCTinitramfs() {
+	# with the latest (16.04.3) initramfsbuilder, when a device is recognized,
+	# the bootscripts don't wait for udev to settle. apparently this wreaks
+	# havoc on the QCT, with the loading of the ahci controller, and mounting
+	# the btrfs /
+	# Lets have it behave again
+	sed -i 's/.*wait-for-root.*/\t\twait_for_udev 20/' /mnt/usr/share/initramfs-tools/scripts/local
 }
 
 function createswaps() {
@@ -611,7 +612,7 @@ prepsys
 createswaps
 mkfstab
 # Also, if QCT, fix initramfs
-if [ "$MOBO" = "S2P-MB" ] ; then
+if [ "$MOBO" = "S2P-MB" ]; then
 	fixQCTinitramfs
 fi
 installgrub

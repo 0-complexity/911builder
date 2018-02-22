@@ -27,6 +27,10 @@ iperf
 iperf3
 iftop
 iptables
+mpt-status
+smartmontools
+software-properties-common
+python-software-properties
 iputils-arping
 iputils-ping
 iputils-tracepath
