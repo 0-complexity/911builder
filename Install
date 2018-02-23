@@ -211,7 +211,7 @@ function genpartuefi() {
 function genpartbios() {
 	mdadm --stop --scan
 	if [ ${#DISKSS[@]} -eq 1 ]; then
-		parted /dev/${DISKS[0]} -s mklabel gpt \
+		parted /dev/${DISK1} -s mklabel gpt \
 			mkpart bios ext2 1 8M \
 			mkpart boot ext2 8M 2G \
 			mkpart swap linux-swap 2G 10G \
@@ -219,14 +219,14 @@ function genpartbios() {
 			set 1 bios_grub on set 2 raid on set 4 raid on
 	else
 		# disk1
-		parted /dev/${DISKS[0]} -s mklabel gpt \
+		parted /dev/${DISK1} -s mklabel gpt \
 			mkpart bios ext2 1 8M \
 			mkpart boot ext2 8M 2G \
 			mkpart swap linux-swap 2G 10G \
 			mkpart root ext2 10G 100% \
 			set 1 bios_grub on set 2 raid on set 4 raid on
 		# disk2
-		parted /dev/${DISKS[1]} -s mklabel gpt \
+		parted /dev/${DISK2} -s mklabel gpt \
 			mkpart bios ext2 1 8M \
 			mkpart boot ext2 8M 2G \
 			mkpart swap linux-swap 2G 10G \
@@ -242,7 +242,7 @@ function genpartbios() {
 
 function prepmounts() {
 	# prepare /boot
-	yes | mdadm --create /dev/md0 -l1 -n2 /dev/${DISK1]}2 /dev/${DISK2}2 --force
+	yes | mdadm --create /dev/md0 -l1 -n2 /dev/${DISK1}2 /dev/${DISK2}2 --force
 	sysctl -w dev.raid.speed_limit_max=10
 	sysctl -w dev.raid.speed_limit_min=10
 	mkfs.ext4 -L BOOT /dev/md0
