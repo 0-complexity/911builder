@@ -41,6 +41,10 @@ case "$MOBO" in
 		BONDIFACES=() # filled in by findifaces
 		MGMT=('eno1')
 		STORIFACE="storage"
+		disks=($(lsblk -l | awk '/sd?/&&/447/{print $1}'))
+		DISK1=${disks[0]}
+		DISK2=${disks[1]}
+		echo "######## Installing on $DISK1 and $DISK2"
 		;;
 	X10DRT-H) # SuperMicro 4-node Chassis DigitalEnergy
 		BONDIFACES=('ens1f0' 'ens1f1')
@@ -48,6 +52,10 @@ case "$MOBO" in
 		MGMT=('eno1')
 		;;
 	X10DRW-N) # SuperMicro UberServer (be-g8-1)
+		disks=($(lsblk -l | awk '/sd?/&&/447/{print $1}'))
+		DISK1=${disks[0]}
+		DISK2=${disks[1]}
+		echo "######## Installing on $DISK1 and $DISK2"
 		BONDIFACES=()
 		STORIFACE="storage"
 		MGMT=('eno1')
@@ -201,44 +209,74 @@ function genpartuefi() {
 }
 
 function genpartbios() {
-	# BIOS_GRUB
-	SIZE="8M"
-	TYPE="ef02"
-	WRCMD="w\ny\ny\n"
-	PARTCMD="n\n\n\n+${SIZE}\n${TYPE}\n"
-	CMD=${PARTCMD}
-
-	# /boot
-	SIZE="2G"
-	TYPE="fd00"
-	PARTCMD="n\n\n\n+${SIZE}\n${TYPE}\n"
-	CMD=${CMD}${PARTCMD}
-
-	# SWAP partitions
-	SIZE="8G"
-	TYPE="8200"
-	PARTCMD="n\n\n\n+${SIZE}\n${TYPE}\n"
-	CMD=${CMD}${PARTCMD}
-
-	# ROOT Filesystem
-	SIZE="40G"
-	TYPE="8300"
-	PARTCMD="n\n\n\n+${SIZE}\n${TYPE}\n"
-	CMD=${CMD}${PARTCMD}
-
-	CMD=${CMD}${WRCMD}
-	if [ $ONEDISK == 1 ]; then
-		echo -e $CMD | gdisk /dev/${DISK}
+	mdadm --stop --scan
+	if [ ${#DISKSS[@]} -eq 1 ]; then
+		parted /dev/${DISKS[0]} -s mklabel gpt \
+			mkpart bios ext2 1 8M \
+			mkpart boot ext2 8M 2G \
+			mkpart swap linux-swap 2G 10G \
+			mkpart root ext2 10G 100% \
+			set 1 bios_grub on set 2 raid on set 4 raid on
 	else
-		echo -e $CMD | gdisk /dev/${DISK1}
-		echo -e $CMD | gdisk /dev/${DISK2}
+		# disk1
+		parted /dev/${DISKS[0]} -s mklabel gpt \
+			mkpart bios ext2 1 8M \
+			mkpart boot ext2 8M 2G \
+			mkpart swap linux-swap 2G 10G \
+			mkpart root ext2 10G 100% \
+			set 1 bios_grub on set 2 raid on set 4 raid on
+		# disk2
+		parted /dev/${DISKS[1]} -s mklabel gpt \
+			mkpart bios ext2 1 8M \
+			mkpart boot ext2 8M 2G \
+			mkpart swap linux-swap 2G 10G \
+			mkpart root ext2 10G 100% \
+			set 1 bios_grub on set 2 raid on set 4 raid on
 	fi
 	# need to sleep here a bit for udev to settle
+	udevadm settle
 	sleep 2
 	mdadm --stop --scan
 }
 
+
 function prepmounts() {
+	# prepare /boot
+	yes | mdadm --create /dev/md0 -l1 -n2 /dev/${DISK1]}2 /dev/${DISK2}2 --force
+	sysctl -w dev.raid.speed_limit_max=10
+	sysctl -w dev.raid.speed_limit_min=10
+	mkfs.ext4 -L BOOT /dev/md0
+
+	# prepare root partition
+	yes | mdadm --create /dev/md1 -l1 -n2 /dev/${DISK1}4 /dev/${DISK2}4 --force
+	mkfs.ext4 /dev/md1 -E lazy_itable_init=1
+
+	# mount it
+	mount /dev/md1 /mnt
+
+	mkdir /mnt/boot
+	mount /dev/md0 /mnt/boot
+}
+
+function prepmountssingle() {
+	# prepare /boot
+	yes | mdadm --create /dev/md0 -l1 -n2 /dev/${DISK1}2 missing --force
+	sysctl -w dev.raid.speed_limit_max=10
+	sysctl -w dev.raid.speed_limit_min=10
+	mkfs.ext4 -L BOOT /dev/md0
+
+	# prepare root partition
+	yes | mdadm --create /dev/md1 -l1 -n2 /dev/${DISK1}4 missing --force
+	mkfs.ext4 /dev/md1 -E lazy_itable_init=1
+
+	# mount it
+	mount /dev/md1 /mnt
+
+	mkdir /mnt/boot
+	mount /dev/md0 /mnt/boot
+}
+
+function prepmountsbtrfs() {
 	# prepare /boot
 	yes | mdadm --create /dev/md0 -l1 -n2 /dev/${DISK1}2 /dev/${DISK2}2 --force
 	sysctl -w dev.raid.speed_limit_max=10
@@ -265,7 +303,7 @@ function prepmounts() {
 	mount /dev/md0 /mnt/boot
 }
 
-function prepmountssingle() {
+function prepmountssinglebtrfs() {
 	# prepare /boot
 	yes | mdadm --create /dev/md0 -l1 -n2 /dev/${DISK}2 missing --force
 	mkfs.ext4 -L BOOT /dev/md0
@@ -511,7 +549,36 @@ function createswaps() {
 	fi
 }
 
+
 function mkfstab() {
+	# generate fstab
+	BOOTUUID=$(blkid -o value /dev/md0 -s UUID)
+	if [ $ONEDISK == 1 ]; then
+		SWAP1=$(blkid -o value /dev/${DISK}3 -s UUID)
+		ROOTUUID=$(blkid -o value /dev/md1 -s UUID)
+	else
+		ROOTUUID=$(blkid -o value /dev/md1 -s UUID)
+		SWAP1=$(blkid -o value /dev/${DISK1}3 -s UUID)
+		SWAP2=$(blkid -o value /dev/${DISK2}3 -s UUID)
+	fi
+
+	cat <<EOF >/mnt/etc/fstab
+# <file system> <mount point>   <type>  <options>       <dump>  <pass>
+proc            /proc   proc    defaults                0       0
+sysfs           /sys    sysfs   defaults                0       0
+devtmpfs        /dev    devtmpfs        rw              0       0
+UUID=${ROOTUUID}  /     ext4 defaults                   0       0
+UUID=${BOOTUUID}  /boot ext4 defaults                   0       0
+UUID=${SWAP1} none swap sw                              0       0
+EOF
+	if [ $ONEDISK == 0 ]; then
+		cat <<EOF >>/mnt/etc/fstab
+UUID=${SWAP2} none swap sw                              0       0
+EOF
+	fi
+}
+
+function mkfstabbtrfs() {
 	# generate fstab
 	BOOTUUID=$(blkid -o value /dev/md0 -s UUID)
 	if [ $ONEDISK == 1 ]; then
