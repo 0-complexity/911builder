@@ -239,7 +239,6 @@ function genpartbios() {
 	mdadm --stop --scan
 }
 
-
 function prepmounts() {
 	# prepare /boot
 	yes | mdadm --create /dev/md0 -l1 -n2 /dev/${DISK1}2 /dev/${DISK2}2 --force
@@ -549,7 +548,6 @@ function createswaps() {
 	fi
 }
 
-
 function mkfstab() {
 	# generate fstab
 	BOOTUUID=$(blkid -o value /dev/md0 -s UUID)
@@ -673,19 +671,33 @@ export HOSTNAME=${AYSHOSTNAME}
 if [ "x${DISK1}" = "x" ]; then
 	findssds
 fi
+# clean up disks
 zappit
-genpartbios
-if [ $ONEDISK == 1 ]; then
-	prepmountssingle
+
+# we're using ext4 if not storage node
+if [ ! "$MOBO" = "S2P-MB" ]; then
+	genpartbiosbtrfs
+	if [ $ONEDISK == 1 ]; then
+		prepmountssinglebtrfs
+	else
+		prepmountsbtrfs
+	fi
+	untarit
+	prepsys
+	createswaps
+	mkfstabbtrfs
+	# Also, if QCT, fix initramfs
 else
-	prepmounts
-fi
-untarit
-prepsys
-createswaps
-mkfstab
-# Also, if QCT, fix initramfs
-if [ "$MOBO" = "S2P-MB" ]; then
+	genpartbios
+	if [ $ONEDISK == 1 ]; then
+		prepmountssingle
+	else
+		prepmounts
+	fi
+	untarit
+	prepsys
+	createswaps
+	mkfstab
 	fixQCTinitramfs
 fi
 installgrub
