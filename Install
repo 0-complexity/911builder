@@ -714,4 +714,4 @@ IPRANGE=$(ipcalc -b ${IPV4ADDR} ${IPV4NETMASK} | awk '/Network/{print $2}')
 echo "All done"
 
 # umount the stuff
-umount /mnt/boot /mnt/home /mnt
+umount -R /mnt
