@@ -509,7 +509,7 @@ update-initramfs -c -k all
 rm -f /boot/grub/grub.cfg
 grub-install --force /dev/${DISK1}
 grub-install --force /dev/${DISK2} &> /dev/null
-sed -ie 's/#GRUB_TERMINAL/GRUB_TERMINAL="serial console"/' /etc/default/grub
+sed -ie 's/#GRUB_TERMINAL.*/GRUB_TERMINAL="serial console"/' /etc/default/grub
 cat << EEOF >> /etc/default/grub
 GRUB_SERIAL_COMMAND="serial --speed=19200 --unit=0 --word=8 --parity=no --stop=1"
 EEOF
