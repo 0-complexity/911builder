@@ -676,7 +676,7 @@ zappit
 
 # we're using ext4 if not storage node
 if [ ! "$MOBO" = "S2P-MB" ]; then
-	genpartbiosbtrfs
+	genpartbios
 	if [ $ONEDISK == 1 ]; then
 		prepmountssinglebtrfs
 	else
