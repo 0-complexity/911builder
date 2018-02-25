@@ -35,6 +35,7 @@ mkdir /root/.ssh
 sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
 
 # give it a sensible hostname
+# NOTE: Install will alter that based on __that__ name
 echo "baseimage" >/etc/hostname
 echo "127.0.0.1 baseimage" >>/etc/hosts
 echo "::1 baseimage" >>/etc/hosts
@@ -53,6 +54,13 @@ echo "gig:R00t3R" | chpasswd
 cat >/etc/systemd/system/getty@.service.d/noclear.conf <<EOF
 [Service]
 TTYVTDisallocate=no
+EOF
+
+# Fix ufuktu openvswitch sequence startup
+[ ! -d /etc/systemd/system/networking.service.d ] && mkdir /etc/systemd/system/networking.service.d
+cat << EOF > /etc/systemd/system/networking.service.d
+[Unit]
+After=local-fs.target network-pre.target apparmor.service systemd-sysctl.service systemd-modules-load.service openvswitch-switch.service
 EOF
 
 apt-get -y clean

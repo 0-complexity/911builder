@@ -705,7 +705,7 @@ installgrub
 # get pubkey autorized_keys
 wget ${fullroot}/pubkey -O - >>/mnt/root/.ssh/authorized_keys
 
-sed -i 's/^exit 0/\/sbin\/ifup backplane1\nexit 0/' /mnt/etc/rc.local
+# sed -i 's/^exit 0/\/sbin\/ifup backplane1\nexit 0/' /mnt/etc/rc.local
 # that should do it
 # tell rootserver we're done to boot in local
 
