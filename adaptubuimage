@@ -58,7 +58,7 @@ EOF
 
 # Fix ufuktu openvswitch sequence startup
 [ ! -d /etc/systemd/system/networking.service.d ] && mkdir /etc/systemd/system/networking.service.d
-cat << EOF > /etc/systemd/system/networking.service.d
+cat << EOF > /etc/systemd/system/networking.service.d/dependency.conf
 [Unit]
 After=local-fs.target network-pre.target apparmor.service systemd-sysctl.service systemd-modules-load.service openvswitch-switch.service
 EOF
