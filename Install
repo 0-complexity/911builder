@@ -215,7 +215,7 @@ function genpartbios() {
 			mkpart bios ext2 1 8M \
 			mkpart boot ext2 8M 2G \
 			mkpart swap linux-swap 2G 10G \
-			mkpart root ext2 10G 100% \
+			mkpart root ext2 10G 50G \
 			set 1 bios_grub on set 2 raid on set 4 raid on
 	else
 		# disk1
@@ -223,15 +223,19 @@ function genpartbios() {
 			mkpart bios ext2 1 8M \
 			mkpart boot ext2 8M 2G \
 			mkpart swap linux-swap 2G 10G \
-			mkpart root ext2 10G 100% \
+			mkpart root ext2 10G 50G \
 			set 1 bios_grub on set 2 raid on set 4 raid on
 		# disk2
 		parted /dev/${DISK2} -s mklabel gpt \
 			mkpart bios ext2 1 8M \
 			mkpart boot ext2 8M 2G \
 			mkpart swap linux-swap 2G 10G \
-			mkpart root ext2 10G 100% \
+			mkpart root ext2 10G 50G \
 			set 1 bios_grub on set 2 raid on set 4 raid on
+                if [ -e /dev/nvme0n1 ]; then
+			parted /dev/nvme0n1 -s mklabel gpt \
+				mkpart root ext2 1 50%
+                fi
 	fi
 	# need to sleep here a bit for udev to settle
 	udevadm settle
@@ -252,6 +256,10 @@ function prepmounts() {
 
 	# mount it
 	mount /dev/md1 /mnt
+	if [ -e /dev/nvme0n1p1 ]; then
+		mkfs.ext4 /dev/nvme0n1p1 -E lazy_itable_init=1
+		mkdir -p /mnt/mnt/ssd1
+        fi
 
 	mkdir /mnt/boot
 	mount /dev/md0 /mnt/boot
@@ -574,6 +582,12 @@ EOF
 UUID=${SWAP2} none swap sw                              0       0
 EOF
 	fi
+	if [ -e /dev/nvme0n1p1 ]; then
+		SSDUUID=$(blkid -o value /dev/nvme0n1p1 -s UUID)
+		cat <<EOF >>/mnt/etc/fstab
+UUID=${SSDUUID}  /mnt/ssd1 ext4 defaults                   0       0
+EOF
+	fi
 }
 
 function mkfstabbtrfs() {
@@ -674,7 +688,7 @@ fi
 # clean up disks
 zappit
 
-# we're using ext4 if not storage node
+# we're using btrfs if not storage node
 if [ ! "$MOBO" = "S2P-MB" ]; then
 	genpartbios
 	if [ $ONEDISK == 1 ]; then
