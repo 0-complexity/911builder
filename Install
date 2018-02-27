@@ -216,6 +216,7 @@ function genpartbios() {
 			mkpart boot ext2 8M 2G \
 			mkpart swap linux-swap 2G 10G \
 			mkpart root ext2 10G 50G \
+			mkpart data ext2 50G 100% \
 			set 1 bios_grub on set 2 raid on set 4 raid on
 	else
 		# disk1
@@ -224,6 +225,7 @@ function genpartbios() {
 			mkpart boot ext2 8M 2G \
 			mkpart swap linux-swap 2G 10G \
 			mkpart root ext2 10G 50G \
+			mkpart data ext2 50G 100% \
 			set 1 bios_grub on set 2 raid on set 4 raid on
 		# disk2
 		parted /dev/${DISK2} -s mklabel gpt \
@@ -231,11 +233,12 @@ function genpartbios() {
 			mkpart boot ext2 8M 2G \
 			mkpart swap linux-swap 2G 10G \
 			mkpart root ext2 10G 50G \
+			mkpart data ext2 50G 100% \
 			set 1 bios_grub on set 2 raid on set 4 raid on
-                if [ -e /dev/nvme0n1 ]; then
+	fi
+	if [ -e /dev/nvme0n1 ]; then
 			parted /dev/nvme0n1 -s mklabel gpt \
 				mkpart root ext2 1 50%
-                fi
 	fi
 	# need to sleep here a bit for udev to settle
 	udevadm settle
