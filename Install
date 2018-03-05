@@ -722,7 +722,14 @@ installgrub
 # get pubkey autorized_keys
 wget ${fullroot}/pubkey -O - >>/mnt/root/.ssh/authorized_keys
 
-# sed -i 's/^exit 0/\/sbin\/ifup backplane1\nexit 0/' /mnt/etc/rc.local
+# if we liv in a DEV env, be less restrictive
+sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /mnt/etc/ssh/sshd_config
+if [ "${DEV}" = "yes" ]; then
+	sed -i 's/^#PasswordAuthentication.*/PasswordAuthentication yes' /mnt/etc/ssh/sshd_config
+else
+	sed -i 's/^#PasswordAuthentication.*/PasswordAuthentication no' /mnt/etc/ssh/sshd_config
+fi
+
 # that should do it
 # tell rootserver we're done to boot in local
 
