@@ -19,7 +19,7 @@
 
 That'll create a `ramfs` file.
 
-### Showtime!
+### Showtime! (on an ubuntu 16.04 VM)
 
 ```
 sudo apt update
