@@ -18,6 +18,7 @@ case "$MOBO" in
 		disks=($(lsscsi -t | awk '!/^\[0:0:/{split($4,d,"/"); print d[3]}'))
 		DISK1=${disks[0]}
 		DISK2=${disks[1]}
+		FS=ext4
 		echo "######## Installing on $DISK1 and $DISK2"
 		;;
 	S2600TPR | GRANTLEY) # Intel Russia
@@ -63,19 +64,18 @@ case "$MOBO" in
 	X10SDV-TLN4F) # be-scale-X SuperMicro
 		BONDIFACES=('eth0' 'eth1')
 		MGMT=('eno1')
+		STORIFACE="storage"
 		;;
 	X10DRFR-NT) # SuperMicro Converged 4-node box
 		BONDIFACES=()
 		MGMT=('eno1')
+		DISK1=sda
+		DISK2=sdb
+		FS=ext4
 		;;
 	X10DRT-H) # SuperMicro Fat-Twin G8 nodes (axs)
 		BONDIFACES=('ens1d1')
 		MGMT=('eno1')
-		;;
-	G1SCN-B) # Gooxi Controller node
-		BONDIFACES=('enp4s0')
-		MGMT=('enp3s0')
-		OSIMAGE="ubu-16.04-generic-raid1.tgz"
 		;;
 	*)
 		# some reasonable defaults ;-)
@@ -89,7 +89,7 @@ esac
 function zappit() {
 	## zappitall
 	## first, zero out evt fs headers from partitions
-	parts=$(ls /dev/disk/by-id/ | awk '/part/&&!/wwn/{print}')
+	parts=$(ls /dev/disk/by-id/ | awk '/part/&&!/wwn/&&!/usb/{print}')
 	for i in $parts; do
 		dd if=/dev/zero of=/dev/disk/by-id/${i} bs=1M count=100 &
 	done
@@ -103,7 +103,7 @@ function zappit() {
 	sync
 
 	# same for md devices that could contain an fs
-	parts=$(ls /dev/disk/by-id/ | awk '/part/&&!/wwn/{print}' | grep -iv usb)
+	parts=$(ls /dev/disk/by-id/ | awk '/part/&&!/wwn/{print}')
 	mds=$(mdadm --detail --scan | awk '/ARRAY/{print $2}')
 	for i in $mds; do
 		dd if=/dev/zero of=$i bs=1M count=100 &
@@ -692,7 +692,7 @@ fi
 zappit
 
 # we're using btrfs if not storage node
-if [ ! "$MOBO" = "S2P-MB" ]; then
+if [ ! "$FS" = "ext4" ]; then
 	genpartbios
 	if [ $ONEDISK == 1 ]; then
 		prepmountssinglebtrfs
@@ -703,7 +703,6 @@ if [ ! "$MOBO" = "S2P-MB" ]; then
 	prepsys
 	createswaps
 	mkfstabbtrfs
-	# Also, if QCT, fix initramfs
 else
 	genpartbios
 	if [ $ONEDISK == 1 ]; then
