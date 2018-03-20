@@ -25,3 +25,7 @@ bash-completion
 ipcalc
 git
 pciutils
+sysbench
+stress-ng
+fio
+bonnie++

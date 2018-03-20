@@ -40,6 +40,7 @@ lm-sensors
 lshw
 lsof
 lsscsi
+nvme-cli
 mdadm
 net-tools
 netcat-openbsd
