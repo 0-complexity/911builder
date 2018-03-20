@@ -1,5 +1,5 @@
 #!/bin/bash
-KVER=4.13.0-31-generic
+KVER=4.15.0-12-generic
 
 NINSTALLER=${NINSTALLER:-no}
 

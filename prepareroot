@@ -2,7 +2,7 @@
 trap "exit" INT
 set -x
 
-KVER=4.13.0-31-generic
+KVER=4.15.0-12-generic
 
 # when running in a docker, we're root (no sudo)
 SUDO="sudo "
