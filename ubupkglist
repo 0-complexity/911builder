@@ -21,6 +21,7 @@ genisoimage
 git
 gzip
 htop
+psmisc
 ifstat
 ifenslave
 iperf

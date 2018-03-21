@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DESTFILE=${1:-../GIGINSTALLER.iso}
+DESTFILE=${1:-/911builder/GIGINSTALLER.iso}
 
 image=ubuimage-16.04.3.tgz
 # basically, create a bootable iso
@@ -29,6 +29,10 @@ MENU TITLE GreenITGlobe Controller installer -or- 911
 LABEL 911
   MENU LABEL ^start 911boot
   KERNEL /vmlinuz
+  INITRD /ramfs
+LABEL 911 (without networking)
+  MENU LABEL ^start 911boot
+  KERNEL /vmlinuz ip=no
   INITRD /ramfs
 LABEL ONE
   MENU LABEL ^Install Controller 1 (one)
