@@ -5,4 +5,4 @@ root/**
 uburoot/**
 binaries/*
 etc/**
-GIGINSTALLER.iso
+*.iso

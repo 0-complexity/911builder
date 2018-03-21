@@ -18,7 +18,6 @@ apt-get update
 apt-get -q -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade
 
 
-
 while read line; do
 	apt-get -q -y install $line
 done <<<$(cat ubupkglist)
@@ -63,6 +62,8 @@ cat << EOF > /etc/systemd/system/networking.service.d/dependency.conf
 [Unit]
 After=local-fs.target network-pre.target apparmor.service systemd-sysctl.service systemd-modules-load.service openvswitch-switch.service
 EOF
+
+sed -ie 's/GRUB_HIDDEN_TIMEOUT.*/#GRUB_HIDDEN_TIMEOUT=0/' /etc/default/grub
 
 apt-get -y clean
 

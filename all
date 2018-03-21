@@ -7,4 +7,4 @@ NINSTALLER=yes ./prepareroot
 ./prepareubuimage
 
 # make the iso
-./mkiso 
+./mkiso /911builder/GIGINSTALLER.ISO

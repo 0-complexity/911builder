@@ -41,6 +41,7 @@ lshw
 lsof
 lsscsi
 nvme-cli
+hdparm
 mdadm
 net-tools
 netcat-openbsd

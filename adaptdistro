@@ -17,7 +17,7 @@ done <<<$(cat pkglist)
 # add kernel
 apt-get -q -y install linux-image-${KVER} linux-image-extra-${KVER} linux-headers-${KVER} linux-tools-${KVER}
 
-# geert's ninstaller
+# add Geert's requirements for 'ninstaller'
 if [ "$NINSTALLER" = "yes" ]; then
 	# Python-pip... yeah fsck
 	apt-get -q -y install python3-pip
@@ -69,7 +69,6 @@ mkdir /root/tools &>/dev/null
 mv /Install /init-chroot /CtrlInstall /root/tools
 chmod 755 /root/tools/init-chroot
 chmod 755 /root/tools/Install
-# add Geert's requirements for 'ninstaller'
 
 # Run Installer
 #

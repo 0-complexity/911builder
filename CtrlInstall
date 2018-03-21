@@ -249,7 +249,7 @@ iface public inet static
   address ${PUBIP}/${PUBMASK}
   gateway ${PUBGW}
   pre-up ovs-vsctl --may-exist add-br backplane1
-  pre-up ovs-vsctl add-port backplane1 public tag=${PUBVLAN} -- set Interface public type=internal
+  pre-up ovs-vsctl --may-exist add-port backplane1 public tag=${PUBVLAN} -- set Interface public type=internal
 EOF
 }
 

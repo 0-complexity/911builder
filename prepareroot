@@ -19,17 +19,16 @@ fi
 
 ${SUDO} cp Install init-chroot pkglist adaptdistro CtrlInstall root
 ${SUDO} chroot root chmod +x adaptdistro
-${SUDO} chroot root /adaptdistro
+${SUDO} ./init-chroot root /adaptdistro
 
 
 # build initramfs with running kernel modules
 ${SUDO} mkdir binaries
 
-cp root/boot/vmlinuz-${KVER} binaries/vmlinuz
-cp -ra root/lib/modules/${KVER} /lib/modules/
+${SUDO} cp root/boot/vmlinuz-${KVER} binaries/vmlinuz
+${SUDO} cp -ra root/lib/modules/${KVER} /lib/modules/
 
 ${SUDO} mkinitramfs -d initramfs-tools/ -o binaries/ramfs ${KVER}
-${SUDO} cp /boot/vmlinuz-${KVER} binaries/vmlinuz
 ${SUDO} chown $(whoami):$(whoami) binaries/*
 
 # Dasy-chain into image creation
