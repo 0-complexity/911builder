@@ -79,4 +79,5 @@ xz-utils
 zerofree
 grub2-common
 grub-pc
+intel-microcode
 man
