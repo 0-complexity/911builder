@@ -28,6 +28,7 @@ iperf
 iperf3
 iftop
 iptables
+iptables-persistent
 mpt-status
 smartmontools
 software-properties-common
