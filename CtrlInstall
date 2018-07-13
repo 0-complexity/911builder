@@ -274,6 +274,7 @@ EOF
 
 function prepsys() {
 	echo $AYSHOSTNAME >/mnt/etc/hostname
+	echo "nameserver 8.8.8.8" >/mnt/etc/resolv.conf
 	cat <<EOF >/mnt/etc/network/interfaces
 # The loopback interface
 # Interfaces that comes with Debian Potato does not like to see
@@ -357,6 +358,7 @@ rm -f rungrub
 EOF
 
 	chmod 755 /mnt/rungrub
+    ./init-chroot /mnt dpkg-reconfigure openssh-server
 	./init-chroot /mnt /rungrub
 }
 
