@@ -1,5 +1,5 @@
 #!/bin/bash
-KVER=4.15.0-12-generic
+KVER=4.15.0-20-generic
 
 NINSTALLER=${NINSTALLER:-no}
 
@@ -15,7 +15,7 @@ while read line; do
 done <<<$(cat pkglist)
 
 # add kernel
-apt-get -q -y install linux-image-${KVER} linux-image-extra-${KVER} linux-headers-${KVER} linux-tools-${KVER}
+apt-get -q -y install linux-image-${KVER} linux-headers-${KVER} linux-tools-${KVER}
 
 # add Geert's requirements for 'ninstaller'
 if [ "$NINSTALLER" = "yes" ]; then
