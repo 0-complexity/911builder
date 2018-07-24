@@ -243,6 +243,8 @@ COMMIT
 :INPUT ACCEPT [2540:747736]
 :FORWARD ACCEPT [0:0]
 :OUTPUT ACCEPT [2494:1292932]
+-A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A OUTPUT -m conntrack --ctstate ESTABLISHED -j ACCEPT
 -A INPUT -i public -p tcp -m multiport --dports 22,3080,7022,80,443 -j ACCEPT
 -A INPUT -i public -j REJECT --reject-with icmp-port-unreachable
 COMMIT
