@@ -343,7 +343,8 @@ EOF
 # line, and change only the value of the NAME= key.
 
 EOF
-
+echo "DefaultDependencies=False" >>  /mnt/lib/systemd/system/network.target
+sed -i  '/Unit/a DefaultDependencies=False' /mnt/lib/systemd/system/openvswitch-switch.service
 }
 
 function installgrub() {
