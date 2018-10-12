@@ -31,7 +31,7 @@ LABEL 911
   KERNEL /vmlinuz
   INITRD /ramfs
 LABEL 911 (without networking)
-  MENU LABEL ^start 911boot
+  MENU LABEL ^start 911boot no network
   KERNEL /vmlinuz ip=no
   INITRD /ramfs
 LABEL ONE
@@ -54,36 +54,10 @@ DISPLAY menu.txt
 TIMEOUT 300
 EOF
 
-# create teststuff
-# mkdir binaries/etc -p
-# for LSB in {1..3} ; do
-# 	cat << EOF > binaries/etc/ctrl0${LSB}.conf
-# function create_dirs() {
-#     mkdir -p /var/ovc/billing
-#     mkdir -p /var/ovc/influx
-#     mkdir -p /var/ovc/mongodb
-#     mkdir -p /var/ovc/pxeboot
-#     mkdir -p /var/ovc/0-access/index
-# }
-#
-# HOSTNAME=be-loc-4-ctrl-0${LSB}
-# DOMAIN=be-g8-4
-# MASK=24
-# MGMTVLAN=2311
-# STORVLAN=2315
-# PUBIP=10.101.109.20${LSB}
-# PUBMASK=16
-# PUBGW=10.101.0.${LSB}
-# PUBVLAN=2312
-# MGMTIP=10.109.2.${LSB}
-# STORIP=10.109.3.${LSB}
-# UNTAGIP=10.109.1.${LSB}
-# EOF
-# done
-
 # get files from Geert
 cp -rav etc binaries
-
+mkdir -p binaries/teleport/
+wget "https://get.gravitational.com/teleport-v3.0.0-linux-amd64-bin.tar.gz" -O binaries/teleport/teleport.tar.gz
 
 # create the ISO
 cd binaries
