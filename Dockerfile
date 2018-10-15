@@ -8,10 +8,10 @@ RUN apt-get update ; \
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install vim-nox pigz
 
 # get kernel in there
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y install linux-headers-4.13.0-19-generic \
-    linux-image-4.13.0-31-generic \
-    linux-image-extra-4.13.0-31-generic \
-    linux-tools-4.13.0-31-generic
+#RUN DEBIAN_FRONTEND=noninteractive apt-get -y install linux-headers-4.15.0-20-generic \
+#    linux-image-4.15.0-20-generic \
+#    linux-image-extra-4.15.0-20-generic \
+#    linux-tools-4.15.0-20-generic
 
 
 # get some cdrom tools in place

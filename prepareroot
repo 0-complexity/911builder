@@ -1,6 +1,7 @@
 #!/bin/bash
 trap "exit" INT
 set -x
+set -e
 
 KVER=4.15.0-20-generic
 
@@ -23,7 +24,7 @@ ${SUDO} ./init-chroot root /adaptdistro
 
 
 # build initramfs with running kernel modules
-${SUDO} mkdir binaries
+${SUDO} mkdir -p binaries
 
 ${SUDO} cp root/boot/vmlinuz-${KVER} binaries/vmlinuz
 ${SUDO} cp -ra root/lib/modules/${KVER} /lib/modules/

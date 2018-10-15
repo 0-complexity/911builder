@@ -23,12 +23,10 @@ That'll create a `ramfs` file.
 
 ```
 sudo apt update
-sudo apt install build-essential debootstrap
-# latest & greatest
-sudo apt install linux-image-4.13.0-21-generic linux-image-extra-4.13.0-21-generic linux-tools-4.13.0-21-generic fdutils linux-headers-4.13.0-21-generic
+sudo apt install build-essential debootstrap ipmitool syslinux genisoimage pigz
 
 # get the builder (is also a submodule in https://github.com/0-complexity/G8OS_boot)
-git clone git@github.com/PurePeople/911builder.git
+git clone git@github.com/0-complexity/911builder.git
 
 cd 911builder
 # remove ./root when it's your first time
