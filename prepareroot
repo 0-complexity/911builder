@@ -25,6 +25,8 @@ ${SUDO} ./init-chroot root /adaptdistro
 
 # build initramfs with running kernel modules
 ${SUDO} mkdir -p binaries
+${sudo} mkdir -p binaries/teleport/
+${SUDO} wget "https://get.gravitational.com/teleport-v3.0.0-linux-amd64-bin.tar.gz" -O binaries/teleport/teleport.tar.gz
 
 ${SUDO} cp root/boot/vmlinuz-${KVER} binaries/vmlinuz
 ${SUDO} cp -ra root/lib/modules/${KVER} /lib/modules/

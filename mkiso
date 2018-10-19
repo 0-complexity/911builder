@@ -55,9 +55,7 @@ TIMEOUT 300
 EOF
 
 # get files from Geert
-cp -rav etc binaries
-mkdir -p binaries/teleport/
-wget "https://get.gravitational.com/teleport-v3.0.0-linux-amd64-bin.tar.gz" -O binaries/teleport/teleport.tar.gz
+cp -rav extra/* binaries/
 
 # create the ISO
 cd binaries
