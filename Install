@@ -395,7 +395,7 @@ iface ${IFC} inet static
   mtu 9000
 EOF
 	if [ "${IFC}" = "storage" ]; then
-		echo "  pre-up ovs-vsctl --may-exist add-port backplane1 storage tag=2315 -- set Interface storage type=internal" >>/mnt/etc/network/interfaces.d/storage.conf
+		echo "  pre-up ovs-vsctl --may-exist add-port backplane1 storage tag=${STORAGEVLAN:2315} -- set Interface storage type=internal" >>/mnt/etc/network/interfaces.d/storage.conf
 	fi
 	echo "  post-up tc qdisc replace dev storage root fq" >>/mnt/etc/network/interfaces.d/storage.conf
 }
@@ -670,8 +670,8 @@ function findssds() {
 source /run/net-*.conf
 eval $(cat /proc/cmdline) &>/dev/null
 LSBIP=$(echo $IPV4ADDR | awk -F . '{printf "%02d",$4}')
-BKPLNIP=$(echo $IPV4ADDR | awk -F . '{print $1"."$2"."$3-1"."$4}')
-STORIP=$(echo $IPV4ADDR | awk -F . '{print $1"."$2"."$3+1"."$4}')
+BKPLNIP=${BACKPLANEIP:-$(echo $IPV4ADDR | awk -F . '{print $1"."$2"."$3-1"."$4}')}
+STORIP=${STORAGEIP:-$(echo $IPV4ADDR | awk -F . '{print $1"."$2"."$3+1"."$4}')}
 HOSTNUM=$(echo $IPV4ADDR | awk -F . '{printf "%02d",$4 - 100}')
 HOSTNAME=${HOSTNAME:-baseimage}
 DNSDOMAIN=${DNSDOMAIN:-local}

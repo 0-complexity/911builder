@@ -257,6 +257,7 @@ function storbr() {
 ### storage
 auto storage
 iface storage inet manual
+  address ${STORIP}/${MASK}
   pre-up ovs-vsctl --may-exist add-br storage
   pre-up ovs-vsctl --may-exist add-br backplane1
   pre-up ovs-vsctl --may-exist add-port backplane1 bkpln2stor tag=${STORVLAN} -- set Interface bkpln2stor type=patch options:peer=stor2bkpln
